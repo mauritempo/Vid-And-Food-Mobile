@@ -10,13 +10,11 @@ import {
     Platform
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS, FONTS, SHADOWS } from '../../../theme/theme';
+import { COLORS, FONTS, SHADOWS } from '../../../../theme/theme';
 
 const CustomNavbar = ({
-    onToggleFilters,
     onSearchChange, // Nueva prop para manejar el texto
     onProfilePress,
-    showFilters,
 }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -47,17 +45,6 @@ const CustomNavbar = ({
                 // --- VISTA NORMAL (Logo + Iconos) ---
                 <>
                     <View style={styles.leftSection}>
-                        <TouchableOpacity
-                            style={[styles.iconButton, showFilters && styles.activeFilter]}
-                            onPress={onToggleFilters}
-                        >
-                            <Icon
-                                name="options-outline"
-                                size={24}
-                                color={showFilters ? COLORS.primary : COLORS.textPrimary}
-                            />
-                        </TouchableOpacity>
-                        
                         {/* Logo centrado o alineado a izquierda según prefieras */}
                         <Text style={styles.logo}>Vid & Food</Text>
                     </View>
@@ -154,7 +141,7 @@ const styles = StyleSheet.create({
     profileButton: {
         marginLeft: 4,
     },
-    
+
     // Estilos de Búsqueda
     searchContainer: {
         flex: 1,

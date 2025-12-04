@@ -7,31 +7,31 @@ import {
   RefreshControl,
   StatusBar,
 } from 'react-native';
-import WineCard from '../ui/WineCard'; // Asegúrate que la ruta sea correcta
+import WineCard from '../common/ui/WineCard'; // Asegúrate que la ruta sea correcta
 import { COLORS, FONTS } from '../../theme/theme';
 
-const Wines = ({ 
-  wines, 
-  onWinePress, 
-  onRefresh, 
+const Wines = ({
+  wines,
+  onWinePress,
+  onRefresh,
   refreshing = false,
-  ListHeaderComponent 
+  ListHeaderComponent
 }) => {
-  
+
   const renderWineCard = ({ item }) => (
     <View style={{ flex: 1, paddingHorizontal: 6 }}>
-        {/* Envolvemos en View con padding para crear el espacio entre columnas */}
-        <WineCard 
-            wine={item} 
-            onPress={() => onWinePress(item)}
-        />
+      {/* Envolvemos en View con padding para crear el espacio entre columnas */}
+      <WineCard
+        wine={item}
+        onPress={() => onWinePress(item)}
+      />
     </View>
   );
 
   const renderHeader = () => (
     <View style={styles.headerWrapper}>
       {ListHeaderComponent}
-      
+
       {/* Header de Resultados más limpio */}
       <View style={styles.resultsContainer}>
         <Text style={styles.resultsTitle}>Nuestra Selección</Text>
@@ -49,18 +49,18 @@ const Wines = ({
         data={wines}
         renderItem={renderWineCard}
         keyExtractor={(item) => item.id.toString()}
-        
+
         // --- CONFIGURACIÓN GRID ---
-        numColumns={2} 
+        numColumns={2}
         columnWrapperStyle={styles.row} // Estilo para cada fila
         // --------------------------
 
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={() => (
-            // Simplifiqué esto para el ejemplo, pero tu componente original estaba bien
-            <View style={styles.emptyContainer}>
-                <Text style={styles.emptyTitle}>Sin resultados</Text>
-            </View>
+          // Simplifiqué esto para el ejemplo, pero tu componente original estaba bien
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitle}>Sin resultados</Text>
+          </View>
         )}
         showsVerticalScrollIndicator={false}
         refreshControl={

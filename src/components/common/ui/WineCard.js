@@ -7,10 +7,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import StarRating from '../common/StarRating'
-import { COLORS, FONTS } from '../../theme/theme';
+import StarRating from '../StarRating';
+import { COLORS, FONTS } from '../../../theme/theme';
 // 2. ¡IMPORTANTE! No olvides importar tu utilidad
-import { getOptimizedImageUrl }  from '../../utils/imageUtils'
+import { getOptimizedImageUrl } from '../../../utils/imageUtils';
 
 function WineCard({ wine, onPress, style }) {
 
