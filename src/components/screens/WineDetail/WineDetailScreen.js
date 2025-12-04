@@ -1,27 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    Image, 
-    ScrollView, 
-    TouchableOpacity, 
+import React, { useState, useEffect, useContext } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    ScrollView,
+    TouchableOpacity,
     StatusBar,
     ActivityIndicator,
     Alert // <--- Faltaba este import para los errores
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS } from '../../../theme/theme'; 
+import { COLORS } from '../../../theme/theme';
 
 // Importa tu servicio aquí
-import { 
-    getWineById, 
-    addFavorite, 
-    removeFavorite, 
-    addHistory, 
-    removeHistory 
-} from '../../../../services/wineServices'; 
+import {
+    getWineById,
+    addFavorite,
+    removeFavorite,
+    addHistory,
+    removeHistory
+} from '../../../../services/wineServices';
+
+import AuthContext from '../../../../services/context/AuthContext';
+import WishListContext from '../../../../services/context/WishListContext';
+import HistoryContext from '../../../../services/context/HistoryContext';
+import ProfileScreen from '../Profile/ProfileScreen';
 
 // Datos de ejemplo para reseñas
 const DUMMY_REVIEWS = [
@@ -34,14 +39,12 @@ const WineDetailScreen = ({ route, navigation }) => {
     // 1. Recibimos la data parcial del Home
     const { wineData: initialData } = route.params || {};
     const insets = useSafeAreaInsets();
-    
+
     // 2. Estado combinado (inicial + fetch)
     const [wine, setWine] = useState(initialData || {});
     const [loading, setLoading] = useState(true);
 
-    // Estados de UI
-    const [isFavorite, setIsFavorite] = useState(false);
-    const [isInHistory, setIsInHistory] = useState(false);
+    // Estados de UI locales eliminados: usaremos los contexts para reactividad global
 
     // 3. EFECTO: Llamar al backend para buscar el detalle completo (descripción, etc.)
     useEffect(() => {
@@ -51,7 +54,7 @@ const WineDetailScreen = ({ route, navigation }) => {
                     setLoading(true);
                     // Llamada al servicio con el ID
                     const fullData = await getWineById(initialData.id);
-                    
+
                     // Mezclamos la data nueva con la que ya teníamos
                     setWine(prev => ({ ...prev, ...fullData }));
                 } catch (error) {
@@ -65,13 +68,14 @@ const WineDetailScreen = ({ route, navigation }) => {
         fetchFullDetails();
     }, [initialData?.id]);
 
-    // 4. EFECTO: Sincronizar estados de Fav/Historial si el backend los devuelve
-    useEffect(() => {
-        if (wine) {
-            if (wine.isFavorite !== undefined) setIsFavorite(wine.isFavorite);
-            if (wine.isInHistory !== undefined) setIsInHistory(wine.isInHistory);
-        }
-    }, [wine]);
+    // (antigua sincronización de estados locales omitida en favor de los contexts)
+
+    // Obtener token y helpers desde contexto
+    const { token, isAuthenticated, openAuthModal } = useContext(AuthContext);
+
+    // Contexts para reactividad global
+    const { isFavorite: isFavInContext, toggleFavorite } = useContext(WishListContext);
+    const { isInHistory: isInHistoryInContext, toggleHistoryLocal } = useContext(HistoryContext);
 
     // 5. MAPEO DE VARIABLES (Para que la UI entienda tu Backend)
     const {
@@ -90,9 +94,9 @@ const WineDetailScreen = ({ route, navigation }) => {
     const image = rawImage || "https://via.placeholder.com/150";
     const region = regionName ? regionName : "Mendoza, Argentina";
     const displayName = vintageYear ? `${name} ${vintageYear}` : name;
-    
-    const descriptionText = backendDescription 
-        ? backendDescription 
+
+    const descriptionText = backendDescription
+        ? backendDescription
         : "Cargando descripción detallada o no disponible para este vino...";
 
     // 6. HELPER: Renderizar Estrellas
@@ -100,11 +104,11 @@ const WineDetailScreen = ({ route, navigation }) => {
         const stars = [];
         for (let i = 1; i <= 5; i++) {
             stars.push(
-                <Ionicons 
-                    key={i} 
-                    name={i <= score ? "star" : "star-outline"} 
-                    size={14} 
-                    color="#FFD700" 
+                <Ionicons
+                    key={i}
+                    name={i <= score ? "star" : "star-outline"}
+                    size={14}
+                    color="#FFD700"
                     style={{ marginRight: 2 }}
                 />
             );
@@ -112,49 +116,55 @@ const WineDetailScreen = ({ route, navigation }) => {
         return stars;
     };
 
-    // --- LÓGICA DE FAVORITOS (Optimista) ---
-    const handleToggleFavorite = async () => {
-        const wineId = wine.id || initialData.id;
-        if (!wineId) return;
+    // --- LÓGICA: usamos los contexts para reactividad global ---
+    const wineIdForActions = wine.id || initialData.id;
 
-        const previousState = isFavorite; 
-        setIsFavorite(!previousState); // UI Inmediata
+    const isFav = wineIdForActions ? isFavInContext(wineIdForActions) : false;
+    const isHist = wineIdForActions ? isInHistoryInContext(wineIdForActions) : false;
+
+    const handleToggleFavorite = async () => {
+        if (!wineIdForActions) return;
+
+        if (!isAuthenticated) {
+            Alert.alert(
+                'Inicia sesión',
+                'Debes iniciar sesión para modificar tus favoritos.',
+                [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Iniciar sesión', onPress: () => navigation.navigate('Profile')}
+                ]
+            );
+            return;
+        }
 
         try {
-            if (previousState) {
-                await removeFavorite(wineId);
-                console.log("Eliminado de favoritos");
-            } else {
-                await addFavorite(wineId);
-                console.log("Agregado a favoritos");
-            }
+            await toggleFavorite(wineIdForActions);
         } catch (error) {
-            console.error("Error en favoritos:", error);
-            setIsFavorite(previousState); // Revertir
-            Alert.alert("Error", "No se pudo actualizar favoritos. Revisa tu conexión.");
+            console.error('Error en favoritos (context):', error);
+            Alert.alert('Error', 'No se pudo actualizar favoritos. Revisa tu conexión.');
         }
     };
 
-    // --- LÓGICA DE HISTORIAL (Optimista) ---
     const handleToggleHistory = async () => {
-        const wineId = wine.id || initialData.id;
-        if (!wineId) return;
+        if (!wineIdForActions) return;
 
-        const previousState = isInHistory;
-        setIsInHistory(!previousState); // UI Inmediata
+        if (!isAuthenticated) {
+            Alert.alert(
+                'Inicia sesión',
+                'Debes iniciar sesión para modificar tu historial.',
+                [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Iniciar sesión', onPress: () => navigation.navigate('Profile')}
+                ]
+            );
+            return;
+        }
 
         try {
-            if (previousState) {
-                await removeHistory(wineId);
-                console.log("Eliminado del historial");
-            } else {
-                await addHistory(wineId);
-                console.log("Agregado al historial");
-            }
+            await toggleHistoryLocal(wineIdForActions);
         } catch (error) {
-            console.error("Error en historial:", error);
-            setIsInHistory(previousState); // Revertir
-            Alert.alert("Error", "No se pudo actualizar el historial.");
+            console.error('Error en historial (context):', error);
+            Alert.alert('Error', 'No se pudo actualizar el historial.');
         }
     };
 
@@ -162,29 +172,29 @@ const WineDetailScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
 
-            <ScrollView 
+            <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 120 }} 
+                contentContainerStyle={{ paddingBottom: 120 }}
             >
                 {/* 1. HERO IMAGE (Rectangular) */}
                 <View style={styles.imageContainer}>
-                    <TouchableOpacity 
-                        style={[styles.backButton, { top: insets.top + 10 }]} 
+                    <TouchableOpacity
+                        style={[styles.backButton, { top: insets.top + 10 }]}
                         onPress={() => navigation.goBack()}
                     >
                         <Ionicons name="arrow-back" size={24} color="#000" />
                     </TouchableOpacity>
 
-                    <Image 
-                        source={{ uri: image }} 
-                        style={styles.wineImage} 
-                        resizeMode="cover" 
+                    <Image
+                        source={{ uri: image }}
+                        style={styles.wineImage}
+                        resizeMode="cover"
                     />
                 </View>
 
                 {/* 2. DETALLES */}
                 <View style={styles.detailsContainer}>
-                    
+
                     {/* Header */}
                     <View style={styles.headerRow}>
                         <View style={{ flex: 1, paddingRight: 10 }}>
@@ -219,7 +229,7 @@ const WineDetailScreen = ({ route, navigation }) => {
                     {/* Descripción */}
                     <Text style={styles.sectionTitle}>Descripción</Text>
                     <Text style={styles.descriptionText}>{descriptionText}</Text>
-                    
+
                     <View style={styles.divider} />
 
                     {/* 3. SECCIÓN RATINGS */}
@@ -249,7 +259,7 @@ const WineDetailScreen = ({ route, navigation }) => {
                             </View>
                         ))}
                     </View>
-                    
+
                 </View>
             </ScrollView>
 
@@ -261,30 +271,30 @@ const WineDetailScreen = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.footerActions}>
-                    <TouchableOpacity 
-                        style={[styles.actionIconBtn, isInHistory && styles.actionIconBtnActive]} 
+                    <TouchableOpacity
+                        style={[styles.actionIconBtn, isHist && styles.actionIconBtnActive]}
                         onPress={handleToggleHistory}
                         activeOpacity={0.7}
                     >
-                        <Ionicons 
-                            name={isInHistory ? "time" : "time-outline"} 
-                            size={24} 
-                            color={isInHistory ? COLORS.primary : "#666"} 
+                        <Ionicons
+                            name={isHist ? "time" : "time-outline"}
+                            size={24}
+                            color={isHist ? COLORS.primary : "#666"}
                         />
-                        <Text style={[styles.actionBtnText, isInHistory && styles.actionBtnTextActive]}>Historial</Text>
+                        <Text style={[styles.actionBtnText, isHist && styles.actionBtnTextActive]}>Historial</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
-                        style={[styles.actionIconBtn, styles.favBtnMargin]} 
+                    <TouchableOpacity
+                        style={[styles.actionIconBtn, styles.favBtnMargin]}
                         onPress={handleToggleFavorite}
                         activeOpacity={0.7}
                     >
-                         <Ionicons 
-                            name={isFavorite ? "heart" : "heart-outline"} 
-                            size={24} 
-                            color={isFavorite ? "#E91E63" : "#666"} 
+                        <Ionicons
+                            name={isFav ? "heart" : "heart-outline"}
+                            size={24}
+                            color={isFav ? "#E91E63" : "#666"}
                         />
-                        <Text style={[styles.actionBtnText, isFavorite && { color: "#E91E63" }]}>Favorito</Text>
+                        <Text style={[styles.actionBtnText, isFav && { color: "#E91E63" }]}>Favorito</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -299,13 +309,13 @@ const styles = StyleSheet.create({
     },
     // IMAGEN (Estilo Rectangular Banner)
     imageContainer: {
-        height: 350, 
-        width: '100%', 
+        height: 350,
+        width: '100%',
         backgroundColor: '#EBEBEB',
-        overflow: 'hidden', 
+        overflow: 'hidden',
     },
     wineImage: {
-        width: '100%', 
+        width: '100%',
         height: '100%',
         resizeMode: 'cover', // Recorta la imagen para llenar el rectángulo
     },
@@ -416,7 +426,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 2,
         marginLeft: 8,
-        marginBottom: 8, 
+        marginBottom: 8,
     },
     reviewCountText: {
         fontSize: 12,
@@ -425,7 +435,7 @@ const styles = StyleSheet.create({
     },
     reviewItem: {
         marginBottom: 16,
-        backgroundColor: '#FAFAFA', 
+        backgroundColor: '#FAFAFA',
         padding: 16,
         borderRadius: 16,
         borderWidth: 1,

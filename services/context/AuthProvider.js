@@ -71,17 +71,33 @@ const AuthContextProvider = ({ children }) => {
   }, [user, token, loading]);
 
   const loginRequest = async ({ email, password }) => {
-    const loginUser = await authService.loginRequest({ email, password });
-    const tokenValue = loginUser.token
+    // 1. Hacemos la petición al backend
+    const loginResponse = await authService.loginRequest({ email, password });
+    const tokenValue = loginResponse.token;
 
     if (!tokenValue) {
       throw new Error("No se recibió token desde el backend");
     }
 
-    const userData = { email }
+    // 2. IMPORTANTE: Decodificamos el token para sacar el ROL y el ID
+    const decodedData = authService.decodeToken(tokenValue);
+    
+    // 3. Creamos el objeto usuario COMPLETO con los datos del token
+    const userData = { 
+        email: email,
+        id: decodedData?.id || decodedData?.sub, // Ajusta según tu token
+        role: decodedData?.role || decodedData?.Role || 'Regular', // <--- AQUÍ ESTÁ LA CLAVE
+        ...decodedData // Guardamos el resto de datos por si acaso
+    };
+
+    console.log("LOGIN EXITOSO - Datos guardados:", userData); // Para depurar
+
+    // 4. Guardamos en el estado y AsyncStorage
     onLogin(userData, tokenValue);
+
     return { user: userData, token: tokenValue };
   };
+
 
   const registerRequest = async ({ email, password, fullName }) => {
     const registerUser = await authService.registerRequest({ email, password, fullName })
