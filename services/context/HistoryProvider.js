@@ -1,71 +1,76 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import HistoryContext from './HistoryContext';
 import AuthContext from './AuthContext';
-import * as WineService from '../wineServices' // Asegúrate de que esta ruta sea correcta
+import { fetchHistory, addHistory, removeHistory } from '../wineServices';
 
 const HistoryProvider = ({ children }) => {
-    const { token } = useContext(AuthContext);
-    const [history, setHistory] = useState([]);
+  const { token } = useContext(AuthContext);
+  const [history, setHistory] = useState([]);
 
-    // 🆕 FUNCIÓN PARA CARGAR EL HISTORIAL DESDE EL BACKEND 🆕
-    const loadInitialHistory = useCallback(async () => {
-        if (!token) {
-            setHistory([]);
-            return;
+  const loadInitialHistory = useCallback(async () => {
+    if (!token) {
+      setHistory([]);
+      return;
+    }
+
+    try {
+      const data = await fetchHistory(token);
+      const ids = Array.isArray(data) ? data.map((id) => id.toString()) : [];
+      setHistory(ids);
+    } catch (e) {
+      console.error('Error cargando historial inicial:', e);
+      setHistory([]);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadInitialHistory();
+  }, [loadInitialHistory]);
+
+  const isInHistory = useCallback(
+    (id) => history.includes(id.toString()),
+    [history]
+  );
+
+  const toggleHistoryLocal = useCallback(
+    async (id) => {
+      if (!token) throw new Error('User not authenticated');
+
+      const strId = id.toString();
+      const wasIn = history.includes(strId);
+
+      setHistory((prev) =>
+        wasIn ? prev.filter((x) => x !== strId) : [...prev, strId]
+      );
+
+      try {
+        if (wasIn) {
+          await removeHistory(strId, token);
+        } else {
+          await addHistory(strId, token);
         }
-        
-        try {
-            // Llamamos al nuevo servicio
-            const historyIds = await WineService.fetchHistory(token)
-            setHistory(historyIds);
-        } catch (e) {
-            console.error('Error cargando historial inicial:', e);
-            setHistory([]); // Fallback a vacío
-        }
-    }, [token]);
+      } catch (e) {
+        console.error('toggleHistoryLocal error:', e);
+        setHistory((prev) =>
+          wasIn ? [...prev, strId] : prev.filter((x) => x !== strId)
+        );
+        throw e;
+      }
+    },
+    [history, token]
+  );
 
+  const refreshHistory = useCallback(() => loadInitialHistory(), [
+    loadInitialHistory,
+  ]);
 
-    // 🔄 EFECTO PARA CARGAR AL INICIO DE SESIÓN 🔄
-    useEffect(() => {
-        loadInitialHistory();
-    }, [token, loadInitialHistory]); // Se ejecuta al montar o cuando el token cambia.
-
-
-    const isInHistory = useCallback((id) => history.includes(id), [history]);
-
-    // Usamos loadInitialHistory para la función refresh
-    const refreshHistory = useCallback(() => {
-        loadInitialHistory();
-    }, [loadInitialHistory]); 
-
-
-    const toggleHistoryLocal = useCallback(
-        async (id) => {
-            if (!token) throw new Error('User not authenticated');
-
-            const wasIn = history.includes(id);
-            setHistory((prev) => (wasIn ? prev.filter((x) => x !== id) : [...prev, id]));
-
-            try {
-                if (wasIn) {
-                    await WineService.removeHistory(id, token);
-                } else {
-                    await WineService.addHistory(id, token);
-                }
-            } catch (e) {
-                console.error('toggleHistoryLocal error:', e);
-                setHistory((prev) => (wasIn ? [...prev, id] : prev.filter((x) => x !== id)));
-                throw e;
-            }
-        },
-        [history, token]
-    );
-
-    return (
-        <HistoryContext.Provider value={{ history, isInHistory, toggleHistoryLocal, refreshHistory }}>
-            {children}
-        </HistoryContext.Provider>
-    );
+  return (
+    <HistoryContext.Provider
+      value={{ history, isInHistory, toggleHistoryLocal, refreshHistory }}
+    >
+      {children}
+    </HistoryContext.Provider>
+  );
 };
 
 export default HistoryProvider;

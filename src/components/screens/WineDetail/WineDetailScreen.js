@@ -8,27 +8,20 @@ import {
     TouchableOpacity,
     StatusBar,
     ActivityIndicator,
-    Alert // <--- Faltaba este import para los errores
+    Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../../theme/theme';
 
-// Importa tu servicio aquí
 import {
     getWineById,
-    addFavorite,
-    removeFavorite,
-    addHistory,
-    removeHistory
 } from '../../../../services/wineServices';
 
 import AuthContext from '../../../../services/context/AuthContext';
 import WishListContext from '../../../../services/context/WishListContext';
 import HistoryContext from '../../../../services/context/HistoryContext';
-import ProfileScreen from '../Profile/ProfileScreen';
 
-// Datos de ejemplo para reseñas
 const DUMMY_REVIEWS = [
     { id: 1, user: "Carlos M.", rating: 5, comment: "Excelente vino, muy equilibrado." },
     { id: 2, user: "Ana G.", rating: 4, comment: "Buen cuerpo, ideal para carnes." },
@@ -36,26 +29,19 @@ const DUMMY_REVIEWS = [
 ];
 
 const WineDetailScreen = ({ route, navigation }) => {
-    // 1. Recibimos la data parcial del Home
     const { wineData: initialData } = route.params || {};
     const insets = useSafeAreaInsets();
 
-    // 2. Estado combinado (inicial + fetch)
     const [wine, setWine] = useState(initialData || {});
     const [loading, setLoading] = useState(true);
 
-    // Estados de UI locales eliminados: usaremos los contexts para reactividad global
 
-    // 3. EFECTO: Llamar al backend para buscar el detalle completo (descripción, etc.)
     useEffect(() => {
         const fetchFullDetails = async () => {
             if (initialData?.id) {
                 try {
                     setLoading(true);
-                    // Llamada al servicio con el ID
                     const fullData = await getWineById(initialData.id);
-
-                    // Mezclamos la data nueva con la que ya teníamos
                     setWine(prev => ({ ...prev, ...fullData }));
                 } catch (error) {
                     console.error("Error trayendo detalles del vino:", error);
@@ -68,16 +54,11 @@ const WineDetailScreen = ({ route, navigation }) => {
         fetchFullDetails();
     }, [initialData?.id]);
 
-    // (antigua sincronización de estados locales omitida en favor de los contexts)
+    const { isAuthenticated, openAuthModal } = useContext(AuthContext);
 
-    // Obtener token y helpers desde contexto
-    const { token, isAuthenticated, openAuthModal } = useContext(AuthContext);
-
-    // Contexts para reactividad global
     const { isFavorite: isFavInContext, toggleFavorite } = useContext(WishListContext);
     const { isInHistory: isInHistoryInContext, toggleHistoryLocal } = useContext(HistoryContext);
 
-    // 5. MAPEO DE VARIABLES (Para que la UI entienda tu Backend)
     const {
         name = "Nombre Desconocido",
         wineryName: winery = "Bodega Desconocida",
@@ -90,7 +71,6 @@ const WineDetailScreen = ({ route, navigation }) => {
         description: backendDescription
     } = wine || {};
 
-    // Lógica de visualización
     const image = rawImage || "https://via.placeholder.com/150";
     const region = regionName ? regionName : "Mendoza, Argentina";
     const displayName = vintageYear ? `${name} ${vintageYear}` : name;
@@ -99,7 +79,6 @@ const WineDetailScreen = ({ route, navigation }) => {
         ? backendDescription
         : "Cargando descripción detallada o no disponible para este vino...";
 
-    // 6. HELPER: Renderizar Estrellas
     const renderStars = (score) => {
         const stars = [];
         for (let i = 1; i <= 5; i++) {
@@ -116,7 +95,6 @@ const WineDetailScreen = ({ route, navigation }) => {
         return stars;
     };
 
-    // --- LÓGICA: usamos los contexts para reactividad global ---
     const wineIdForActions = wine.id || initialData.id;
 
     const isFav = wineIdForActions ? isFavInContext(wineIdForActions) : false;
@@ -176,7 +154,6 @@ const WineDetailScreen = ({ route, navigation }) => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 120 }}
             >
-                {/* 1. HERO IMAGE (Rectangular) */}
                 <View style={styles.imageContainer}>
                     <TouchableOpacity
                         style={[styles.backButton, { top: insets.top + 10 }]}
@@ -192,10 +169,8 @@ const WineDetailScreen = ({ route, navigation }) => {
                     />
                 </View>
 
-                {/* 2. DETALLES */}
                 <View style={styles.detailsContainer}>
 
-                    {/* Header */}
                     <View style={styles.headerRow}>
                         <View style={{ flex: 1, paddingRight: 10 }}>
                             <Text style={styles.wineryLabel}>{winery.toUpperCase()}</Text>
@@ -207,7 +182,6 @@ const WineDetailScreen = ({ route, navigation }) => {
                         </View>
                     </View>
 
-                    {/* Tags */}
                     <View style={styles.tagsContainer}>
                         <View style={styles.tag}>
                             <Ionicons name="location-outline" size={14} color="#666" />
@@ -226,13 +200,11 @@ const WineDetailScreen = ({ route, navigation }) => {
 
                     <View style={styles.divider} />
 
-                    {/* Descripción */}
                     <Text style={styles.sectionTitle}>Descripción</Text>
                     <Text style={styles.descriptionText}>{descriptionText}</Text>
 
                     <View style={styles.divider} />
 
-                    {/* 3. SECCIÓN RATINGS */}
                     <View style={styles.reviewsSection}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
                             <Text style={styles.sectionTitle}>Reseñas</Text>
@@ -241,7 +213,6 @@ const WineDetailScreen = ({ route, navigation }) => {
                             </View>
                         </View>
 
-                        {/* Lista de reseñas */}
                         {DUMMY_REVIEWS.map((review) => (
                             <View key={review.id} style={styles.reviewItem}>
                                 <View style={styles.reviewHeader}>
@@ -263,7 +234,6 @@ const WineDetailScreen = ({ route, navigation }) => {
                 </View>
             </ScrollView>
 
-            {/* 4. FOOTER (Fijo) */}
             <View style={[styles.footer, { paddingBottom: insets.bottom > 0 ? insets.bottom : 20 }]}>
                 <View style={styles.priceContainer}>
                     <Text style={styles.priceLabel}>Precio</Text>
@@ -307,7 +277,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F9F9F9',
     },
-    // IMAGEN (Estilo Rectangular Banner)
     imageContainer: {
         height: 350,
         width: '100%',
@@ -317,7 +286,7 @@ const styles = StyleSheet.create({
     wineImage: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover', // Recorta la imagen para llenar el rectángulo
+        resizeMode: 'cover', 
     },
     backButton: {
         position: 'absolute',
@@ -331,11 +300,10 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         elevation: 2,
     },
-    // DETALLES
     detailsContainer: {
         flex: 1,
         backgroundColor: '#FFF',
-        marginTop: -50, // Sube sobre la imagen
+        marginTop: -50, 
         borderTopLeftRadius: 35,
         borderTopRightRadius: 35,
         paddingHorizontal: 24,
@@ -416,7 +384,6 @@ const styles = StyleSheet.create({
         color: '#555',
         lineHeight: 26,
     },
-    // ESTILOS RESEÑAS
     reviewsSection: {
         marginBottom: 20,
     },
@@ -470,7 +437,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         lineHeight: 22,
     },
-    // FOOTER
     footer: {
         position: 'absolute',
         bottom: 0,

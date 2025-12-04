@@ -22,8 +22,8 @@ const GenericSidebarFilter = ({
     defaultValue,
     onChange,
     onFilterChange,
-    onClose, // Nueva prop para cerrar el modal/sidebar
-    onResetAll, // Nueva prop para resetear
+    onClose,  
+    onResetAll, 
     rangeDebounceMs = 300,
 }) => {
     const isControlled = value != null;
@@ -32,12 +32,10 @@ const GenericSidebarFilter = ({
     const [showAllFilters, setShowAllFilters] = useState(false);
     const debounceRef = useRef(null);
 
-    // ... (Mantén tu lógica existente de shouldLimitFilters, visibleFilters, etc.)
     const shouldLimitFilters = !!maxVisibleFilters && maxVisibleFilters > 0 && filters.length > maxVisibleFilters;
     const visibleFilters = shouldLimitFilters && !showAllFilters ? filters.slice(0, maxVisibleFilters) : filters;
     const hiddenFilterCount = shouldLimitFilters ? filters.length - (maxVisibleFilters || 0) : 0;
 
-    // ... (Mantén las funciones emit y update igual)
     const emit = (next, opts = {}) => {
         if (!isControlled) setInternal(next);
         if (opts.isRange && rangeDebounceMs > 0) {
@@ -54,25 +52,20 @@ const GenericSidebarFilter = ({
         emit(next, opts);
     };
 
-    // ... (Mantén getPreviewContent y renderFilterContent igual)
     const getPreviewContent = (filter) => {
         const val = filterValues[filter.id];
-        // ... (Tu lógica existente aquí)
         if (!val) return "";
-        if (filter.type === "range") return "Rango seleccionado"; // Simplificado para ejemplo
+        if (filter.type === "range") return "Rango seleccionado"; 
         if (Array.isArray(val) && val.length > 0) return `${val.length} seleccionados`;
         return "";
     };
 
     const renderFilterContent = (filter) => {
-        // ... (Tu switch case existente, igual)
-        // Solo asegúrate de pasar las props correctamente
         const current = filterValues[filter.id];
         switch (filter.type) {
              case "checkbox":
                 return <CheckBoxFilter options={filter.options} value={Array.isArray(current) ? current : []} onChange={(ids) => update(filter.id, ids)} />;
              case "range":
-                 // ... tu logica range
                  return <RangeFilter options={filter.options} value={current} onChange={(v) => update(filter.id, v, {isRange:true})} />;
              case "rating":
                  return <RatingFilter options={filter.options} value={current} onChange={(v) => update(filter.id, v)} />;
@@ -82,7 +75,6 @@ const GenericSidebarFilter = ({
 
     return (
         <View style={styles.container}>
-            {/* Header Fijo */}
             <View style={styles.header}>
                 <Text style={styles.title}>{title}</Text>
                 <TouchableOpacity onPress={onResetAll}>
@@ -101,7 +93,6 @@ const GenericSidebarFilter = ({
                         title={filter.title}
                         isCollapsed={filter.isCollapsed}
                         previewContent={getPreviewContent(filter)}
-                        // Eliminamos bordes dobles, diseño más limpio
                         isLast={index === visibleFilters.length - 1 && !shouldLimitFilters && !showAllFilters}
                     >
                         {renderFilterContent(filter)}
@@ -121,7 +112,6 @@ const GenericSidebarFilter = ({
                 )}
             </ScrollView>
 
-            {/* Footer Flotante para Aplicar/Cerrar */}
             <SafeAreaView style={styles.footerContainer}>
                 <TouchableOpacity style={styles.applyButton} onPress={onClose}>
                     <Text style={styles.applyButtonText}>Ver Resultados</Text>
@@ -161,7 +151,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingBottom: 100, // Espacio para el botón flotante
+        paddingBottom: 100, 
     },
     showMoreButton: {
         flexDirection: 'row',
@@ -176,7 +166,6 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
     },
     
-    // Footer Flotante
     footerContainer: {
         position: 'absolute',
         bottom: 0,
@@ -186,7 +175,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#f0f0f0',
         padding: 16,
-        paddingBottom: 24, // Ajuste para iPhone X+
+        paddingBottom: 24, 
         shadowColor: "#000",
         shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.05,
@@ -194,7 +183,7 @@ const styles = StyleSheet.create({
         elevation: 10,
     },
     applyButton: {
-        backgroundColor: COLORS.primary || '#000', // Un color fuerte
+        backgroundColor: COLORS.primary || '#000', 
         borderRadius: 12,
         height: 50,
         justifyContent: 'center',

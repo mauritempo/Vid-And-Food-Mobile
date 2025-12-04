@@ -1,4 +1,4 @@
-import React, { memo } from 'react'; // 1. Agregamos memo para rendimiento
+import React, { memo } from 'react'; 
 import {
   View,
   Text,
@@ -9,20 +9,14 @@ import {
 
 import StarRating from '../common/StarRating'
 import { COLORS, FONTS } from '../../theme/theme';
-// 2. ¡IMPORTANTE! No olvides importar tu utilidad
 import { getOptimizedImageUrl }  from '../../utils/imageUtils'
 
 function WineCard({ wine, onPress, style }) {
-
-  // 3. Obtenemos la URL optimizada (la utilidad ya maneja el placeholder si es null)
   const optimizedUrl = getOptimizedImageUrl(wine.imageUrl, 400);
-
-  // Formateo de precio
   const formattedPrice = wine.price
     ? `$${wine.price.toLocaleString('es-AR')}`
     : "Consultar";
 
-  // Mapeo de datos
   const wineryName = wine.wineryName || "Bodega Desconocida";
   const rating = wine.averageScore || 0;
   const ratingText = rating > 0 ? rating.toFixed(1) : "-";
@@ -35,7 +29,6 @@ function WineCard({ wine, onPress, style }) {
     >
       <View style={styles.imageContainer}>
         <Image
-          // 4. Usamos la URL optimizada aquí
           source={{ uri: optimizedUrl }}
           style={styles.image}
           resizeMode="cover"
@@ -71,7 +64,6 @@ function WineCard({ wine, onPress, style }) {
   );
 }
 
-// 5. Los estilos se mantienen igual (no los repito para no ocupar espacio)
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.white,
@@ -159,5 +151,4 @@ const styles = StyleSheet.create({
   }
 });
 
-// 6. Exportamos con memo para evitar re-renderizados innecesarios en listas largas
 export default memo(WineCard);

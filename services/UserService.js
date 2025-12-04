@@ -1,10 +1,10 @@
-import { API_URL } from "@env";
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TOKEN_KEY = "vf-token";
+const API_URL = process.env.API_URL;
 
 export const upgradeToSommelier = async (token) => {
-    // Prefer explicit token, fallback to AsyncStorage
     const tokenToUse = token ?? await AsyncStorage.getItem(TOKEN_KEY);
     console.log('Token que se usa en Authorization:', tokenToUse);
 

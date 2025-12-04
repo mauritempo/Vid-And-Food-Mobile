@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   View,
   FlatList,
@@ -7,7 +6,7 @@ import {
   RefreshControl,
   StatusBar,
 } from 'react-native';
-import WineCard from '../common/ui/WineCard'; // Asegúrate que la ruta sea correcta
+import WineCard from '../common/ui/WineCard';  
 import { COLORS, FONTS } from '../../theme/theme';
 
 const Wines = ({
@@ -20,7 +19,6 @@ const Wines = ({
 
   const renderWineCard = ({ item }) => (
     <View style={{ flex: 1, paddingHorizontal: 6 }}>
-      {/* Envolvemos en View con padding para crear el espacio entre columnas */}
       <WineCard
         wine={item}
         onPress={() => onWinePress(item)}
@@ -49,15 +47,10 @@ const Wines = ({
         data={wines}
         renderItem={renderWineCard}
         keyExtractor={(item) => item.id.toString()}
-
-        // --- CONFIGURACIÓN GRID ---
         numColumns={2}
-        columnWrapperStyle={styles.row} // Estilo para cada fila
-        // --------------------------
-
+        columnWrapperStyle={styles.row} 
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={() => (
-          // Simplifiqué esto para el ejemplo, pero tu componente original estaba bien
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>Sin resultados</Text>
           </View>
@@ -85,19 +78,19 @@ const Wines = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA', // Un gris muy muy claro es mejor que blanco puro
+    backgroundColor: '#FAFAFA', 
   },
   listContent: {
-    paddingHorizontal: 10, // Padding externo general
+    paddingHorizontal: 10,
     paddingBottom: 20,
     paddingTop: 10,
   },
   row: {
-    justifyContent: 'space-between', // Distribuye las columnas
+    justifyContent: 'space-between', 
   },
   headerWrapper: {
     marginBottom: 16,
-    paddingHorizontal: 6, // Alineado con el padding de las cards
+    paddingHorizontal: 6, 
   },
   resultsContainer: {
     flexDirection: 'row',
@@ -108,7 +101,7 @@ const styles = StyleSheet.create({
   },
   resultsTitle: {
     fontSize: 20,
-    fontFamily: FONTS.bold, // Asumiendo que existe, sino 'fontWeight: 700'
+    fontFamily: FONTS.bold, 
     color: COLORS.textPrimary || '#111',
   },
   resultsCount: {

@@ -1,6 +1,3 @@
-// src/data/wines.js
-// Datos de vinos adaptados para React Native
-
 export const wines = [
   {
     id: 1,

@@ -4,8 +4,8 @@ export function toSlug(s) {
     .toString()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Remover acentos
-    .replace(/[^a-z0-9]+/g, " ")     // Reemplazar caracteres especiales por espacios
+    .replace(/[\u0300-\u036f]/g, "") 
+    .replace(/[^a-z0-9]+/g, " ")     
     .trim()
-    .split(" ")[0];                   // Tomar solo la primera palabra
+    .split(" ")[0];                  
 }

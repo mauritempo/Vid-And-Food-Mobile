@@ -1,11 +1,8 @@
-// theme/theme.js
-// Tema adaptado para React Native
-
 export const COLORS = {
-  primary: '#5D001E', // Borgoña profundo
-  secondary: '#004225', // Verde oscuro
-  accent: '#D4AF37', // Dorado apagado
-  background: '#FDFBF5', // Marfil
+  primary: '#5D001E', 
+  secondary: '#004225', 
+  accent: '#D4AF37', 
+  background: '#FDFBF5', 
   textPrimary: '#212121',
   textSecondary: '#757575',
   white: '#FFFFFF',
@@ -20,14 +17,10 @@ export const COLORS = {
 
 
 export const FONTS = {
-  // Para React Native, las fuentes se manejan diferente
-  // Estas serían las fuentes del sistema o custom fonts cargadas
   regular: 'System',
   medium: 'System',
   semiBold: 'System',
   bold: 'System',
-  
-  // Tamaños de fuente
   small: 12,
   body: 14,
   title: 16,

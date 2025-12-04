@@ -1,13 +1,10 @@
 import React, { useContext, useState } from 'react';
 import { View, Text, StyleSheet, Button, ActivityIndicator, Alert } from 'react-native';
 
-// Asegúrate de ajustar las rutas de importación:
 import AuthContext from '../../../../services/context/AuthContext';
 import { upgradeToSommelier } from '../../../../services/UserService';
-// Asumo que tienes una forma de navegar, podrías inyectarla con useNavigation si fuera necesario.
 
 const UpgradeScreen = ({ navigation }) => {
-    // Necesitas el token y la función para actualizar el usuario localmente (onLogin)
     const { token, user, onLogin } = useContext(AuthContext);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -57,7 +54,7 @@ const UpgradeScreen = ({ navigation }) => {
                         title="Pagar y Actualizar Rol"
                         onPress={handleUpgrade}
                         color="#A00"
-                        disabled={!user} // Deshabilitar si el usuario no está cargado
+                        disabled={!user}  
                     />
                 )}
             </View>

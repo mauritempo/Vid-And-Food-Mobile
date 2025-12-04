@@ -1,38 +1,41 @@
-import { useEffect, useState } from "react";
-import { View, ActivityIndicator, Text } from "react-native"; // <--- Importamos componentes nativos
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import AuthContext from "./AuthContext";
-import * as authService from "../AuthService";
+import AuthContext from './AuthContext';
+import {
+  loginRequest as loginApi,
+  registerRequest as registerApi,
+  decodeToken,
+  mapClaimsToUser,
+} from '../AuthService';
+
+const USER_KEY = 'vf-user';
+const TOKEN_KEY = 'vf-token';
 
 const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  // Inicializamos en null. El useEffect se encarga de llenarlo después.
-  const [token, setToken] = useState(null); 
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState("login");
+  const [authModalMode, setAuthModalMode] = useState('login');
 
-  // 1. CARGA INICIAL
   useEffect(() => {
     const loadSession = async () => {
       try {
-        const savedUser = await AsyncStorage.getItem("vf-user");
-        const savedToken = await AsyncStorage.getItem("vf-token");
+        const savedUser = await AsyncStorage.getItem(USER_KEY);
+        const savedToken = await AsyncStorage.getItem(TOKEN_KEY);
 
         if (savedUser && savedToken) {
           setUser(JSON.parse(savedUser));
           setToken(savedToken);
         }
       } catch (error) {
-        console.error("Error cargando sesión", error);
-        await AsyncStorage.removeItem("vf-user");
-        await AsyncStorage.removeItem("vf-token");
+        console.error('Error cargando sesión', error);
+        await AsyncStorage.removeItem(USER_KEY);
+        await AsyncStorage.removeItem(TOKEN_KEY);
       } finally {
-        // Pequeño delay para que no parpadee si la carga es muy rápida
-        setTimeout(() => {
-          setLoading(false);
-        }, 1000);
+        setTimeout(() => setLoading(false), 800);
       }
     };
 
@@ -46,92 +49,65 @@ const AuthContextProvider = ({ children }) => {
     setToken(tokenValue);
   };
 
-  const onLogout = () => {
+  const onLogout = async () => {
     setUser(null);
     setToken(null);
+    await AsyncStorage.removeItem(USER_KEY);
+    await AsyncStorage.removeItem(TOKEN_KEY);
   };
 
-  // 2. GUARDADO DE DATOS (PERSISTENCIA)
   useEffect(() => {
     const saveSession = async () => {
-        try {
-            if (user && token) {
-                await AsyncStorage.setItem("vf-user", JSON.stringify(user));
-                await AsyncStorage.setItem("vf-token", token);
-            } else if (!loading) {
-                // Solo borramos si ya terminó de cargar la app (para no borrar al inicio por error)
-                await AsyncStorage.removeItem("vf-user");
-                await AsyncStorage.removeItem("vf-token");
-            }
-        } catch (error) {
-            console.error("Error guardando sesión", error);
+      try {
+        if (user && token) {
+          await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+          await AsyncStorage.setItem(TOKEN_KEY, token);
+        } else if (!loading) {
+          await AsyncStorage.removeItem(USER_KEY);
+          await AsyncStorage.removeItem(TOKEN_KEY);
         }
+      } catch (error) {
+        console.error('Error guardando sesión', error);
+      }
     };
     saveSession();
   }, [user, token, loading]);
 
   const loginRequest = async ({ email, password }) => {
-    // 1. Hacemos la petición al backend
-    const loginResponse = await authService.loginRequest({ email, password });
+    const loginResponse = await loginApi({ email, password });
     const tokenValue = loginResponse.token;
 
     if (!tokenValue) {
-      throw new Error("No se recibió token desde el backend");
+      throw new Error('No se recibió token desde el backend');
     }
 
-    // 2. IMPORTANTE: Decodificamos el token para sacar el ROL y el ID
-    const decodedData = authService.decodeToken(tokenValue);
-    
-    // 3. Creamos el objeto usuario COMPLETO con los datos del token
-    const userData = { 
-        email: email,
-        id: decodedData?.id || decodedData?.sub, // Ajusta según tu token
-        role: decodedData?.role || decodedData?.Role || 'Regular', // <--- AQUÍ ESTÁ LA CLAVE
-        ...decodedData // Guardamos el resto de datos por si acaso
+    const claims = decodeToken(tokenValue);
+    const mapped = mapClaimsToUser(claims) || {
+      id: claims?.sub ?? null,
+      email,
+      role: 'User',
     };
 
-    console.log("LOGIN EXITOSO - Datos guardados:", userData); // Para depurar
+    console.log('LOGIN MOBILE - userData mapeado:', mapped);
+    onLogin(mapped, tokenValue);
 
-    // 4. Guardamos en el estado y AsyncStorage
-    onLogin(userData, tokenValue);
-
-    return { user: userData, token: tokenValue };
+    return { user: mapped, token: tokenValue };
   };
-
 
   const registerRequest = async ({ email, password, fullName }) => {
-    const registerUser = await authService.registerRequest({ email, password, fullName })
-    
-    const loginData = await authService.loginRequest({ email, password });
-    const tokenValue = loginData.token;
-
-    if (!tokenValue) {
-      throw new Error("No se recibió token desde el backend");
-    }
-    
-    const userData = {
-      id: registerUser.id,
-      email: registerUser.email,
-      name: registerUser.fullName,
-      role: registerUser.role,
-      isActive: registerUser.isActive,
-    };
-
-    onLogin(userData, tokenValue);
-    return { user: userData , token: tokenValue };
+    await registerApi({ email, password, fullName });
+    return loginRequest({ email, password });
   };
 
-  const openAuthModal = (mode = "login") => {
+  const openAuthModal = (mode = 'login') => {
     setAuthModalMode(mode);
     setIsAuthModalOpen(true);
   };
 
-  const closeAuthModal = () => {
-    setIsAuthModalOpen(false);
-  };
+  const closeAuthModal = () => setIsAuthModalOpen(false);
 
   const switchMode = () => {
-    setAuthModalMode((prev) => (prev === "login" ? "register" : "login"));
+    setAuthModalMode((prev) => (prev === 'login' ? 'register' : 'login'));
   };
 
   return (
@@ -153,8 +129,14 @@ const AuthContextProvider = ({ children }) => {
       }}
     >
       {loading ? (
-        // REEMPLAZO DEL GLOBAL LOADER:
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: '#fff' }}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: '#fff',
+          }}
+        >
           <ActivityIndicator size="large" color="#0000ff" />
           <Text style={{ marginTop: 10 }}>Cargando sesión...</Text>
         </View>

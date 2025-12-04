@@ -29,13 +29,9 @@ const HomeScreen = ({ navigation }) => {
             setLoading(true);
             const rawData = await getWines();
             
-            // --- NORMALIZACIÓN DE DATOS ---
-            // Convertimos los nombres del backend a lo que usa tu UI para evitar errores
             const normalizedData = rawData.map(wine => ({
                 ...wine,
-                // Aseguramos que 'winery' exista, usando wineryName del back o un default
                 winery: wine.wineryName || wine.winery || "Bodega Desconocida",
-                // Aseguramos que el ID sea string
                 id: wine.id ? wine.id.toString() : Math.random().toString()
             }));
 
@@ -48,7 +44,6 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
-    // Lógica de Filtrado eficiente
     const filteredWines = useMemo(() => {
         let result = wines;
 

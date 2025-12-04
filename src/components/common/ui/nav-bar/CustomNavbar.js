@@ -13,24 +13,22 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, FONTS, SHADOWS } from '../../../../theme/theme';
 
 const CustomNavbar = ({
-    onSearchChange, // Nueva prop para manejar el texto
+    onSearchChange, 
     onProfilePress,
 }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [searchText, setSearchText] = useState('');
     const inputRef = useRef(null);
 
-    // Función para activar la búsqueda
     const handleStartSearch = () => {
         setIsSearching(true);
         setTimeout(() => inputRef.current?.focus(), 100);
     };
 
-    // Función para cancelar/cerrar búsqueda
     const handleCancelSearch = () => {
         setIsSearching(false);
         setSearchText('');
-        onSearchChange && onSearchChange(''); // Limpiar filtro
+        onSearchChange && onSearchChange(''); 
         Keyboard.dismiss();
     };
 
@@ -42,10 +40,8 @@ const CustomNavbar = ({
     return (
         <View style={styles.navbar}>
             {!isSearching ? (
-                // --- VISTA NORMAL (Logo + Iconos) ---
                 <>
                     <View style={styles.leftSection}>
-                        {/* Logo centrado o alineado a izquierda según prefieras */}
                         <Text style={styles.logo}>Vid & Food</Text>
                     </View>
 
@@ -61,13 +57,11 @@ const CustomNavbar = ({
                             style={styles.profileButton}
                             onPress={onProfilePress}
                         >
-                            {/* Puedes poner una imagen real aquí si tienes url del usuario */}
                             <Icon name="person-circle-outline" size={28} color={COLORS.textSecondary} />
                         </TouchableOpacity>
                     </View>
                 </>
             ) : (
-                // --- VISTA BÚSQUEDA (Input + Cerrar) ---
                 <View style={styles.searchContainer}>
                     <View style={styles.searchInputWrapper}>
                         <Icon name="search" size={20} color={COLORS.textSecondary} style={{ marginRight: 8 }} />
@@ -101,11 +95,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
-        backgroundColor: COLORS.white || '#fff', // Fondo blanco limpio
+        backgroundColor: COLORS.white || '#fff', 
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
-        height: 60, // Altura estándar
-        // Sombra sutil solo en iOS/Android
+        height: 60, 
         ...Platform.select({
             ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
             android: { elevation: 4 },
@@ -124,7 +117,7 @@ const styles = StyleSheet.create({
     },
     logo: {
         fontSize: 20,
-        fontFamily: FONTS.bold, // Asegúrate de tener fuentes cargadas, sino usa fontWeight
+        fontFamily: FONTS.bold, 
         color: COLORS.textPrimary,
         letterSpacing: -0.5,
     },
@@ -136,13 +129,12 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     activeFilter: {
-        backgroundColor: COLORS.lightPrimary || '#EFEFEF', // Un fondo suave si está activo
+        backgroundColor: COLORS.lightPrimary || '#EFEFEF', 
     },
     profileButton: {
         marginLeft: 4,
     },
 
-    // Estilos de Búsqueda
     searchContainer: {
         flex: 1,
         flexDirection: 'row',
@@ -153,7 +145,7 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F5F5F5', // Gris muy claro para el input
+        backgroundColor: '#F5F5F5', 
         borderRadius: 12,
         paddingHorizontal: 12,
         height: 40,
@@ -162,7 +154,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 15,
         color: COLORS.textPrimary,
-        paddingVertical: 0, // Fix para centrar texto en Android
+        paddingVertical: 0, 
         height: '100%',
     },
     cancelButton: {

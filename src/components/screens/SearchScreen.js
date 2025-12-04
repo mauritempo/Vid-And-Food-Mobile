@@ -10,8 +10,7 @@ import {
     SafeAreaView,
     Keyboard,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Usamos Ionicons de expo que ya tenes instalado
-// Ajusta esta ruta si WineCard está en otra carpeta, por ejemplo '../../wines/WineCard'
+import { Ionicons } from '@expo/vector-icons'; 
 import WineCard from '../wines/WineCard'; 
 import { COLORS, FONTS } from '../../theme/theme';
 
@@ -29,7 +28,6 @@ const SearchScreen = ({ visible, onClose, onWinePress, wines = [] }) => {
             const results = wines.filter(wine => {
                 const name = (wine.name || "").toLowerCase();
                 const winery = (wine.winery || "").toLowerCase();
-                // Puedes agregar más campos aquí (región, tipo, etc.)
                 return name.includes(query) || winery.includes(query);
             });
             setFilteredWines(results);
@@ -47,7 +45,6 @@ const SearchScreen = ({ visible, onClose, onWinePress, wines = [] }) => {
     };
 
     const addToRecentAndClose = (wine) => {
-        // Guardar búsqueda reciente si no existe
         if (searchText.trim() && !recentSearches.includes(searchText.trim())) {
             setRecentSearches(prev => [searchText.trim(), ...prev.slice(0, 4)]);
         }
@@ -72,7 +69,6 @@ const SearchScreen = ({ visible, onClose, onWinePress, wines = [] }) => {
     );
 
     const renderWine = ({ item }) => (
-        // Asegúrate de que WineCard acepte 'onPress'
         <View style={{ marginVertical: 8, marginHorizontal: 16 }}>
              <WineCard wine={item} onPress={() => addToRecentAndClose(item)} />
         </View>
