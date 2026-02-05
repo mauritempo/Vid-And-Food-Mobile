@@ -1,20 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
-    TextInput,
-    Animated,
-    Keyboard,
-    Platform
-} from 'react-native';
+import { useState, useRef } from 'react';
+import {View,Text,TouchableOpacity,StyleSheet,TextInput,Keyboard,Platform} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS, FONTS, SHADOWS } from '../../../../theme/theme';
+import { COLORS, FONTS } from '../../../../theme/theme';
 
 const CustomNavbar = ({
     onSearchChange, 
     onProfilePress,
+    showSearch = true // <--- 1. NUEVA PROP (por defecto true)
 }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -46,12 +38,15 @@ const CustomNavbar = ({
                     </View>
 
                     <View style={styles.rightSection}>
-                        <TouchableOpacity
-                            style={styles.iconButton}
-                            onPress={handleStartSearch}
-                        >
-                            <Icon name="search-outline" size={24} color={COLORS.textPrimary} />
-                        </TouchableOpacity>
+                        {/* 2. USAR LA PROP AQUÍ PARA OCULTAR LA LUPA */}
+                        {showSearch && (
+                            <TouchableOpacity
+                                style={styles.iconButton}
+                                onPress={handleStartSearch}
+                            >
+                                <Icon name="search-outline" size={24} color={COLORS.textPrimary} />
+                            </TouchableOpacity>
+                        )}
 
                         <TouchableOpacity
                             style={styles.profileButton}
@@ -68,7 +63,7 @@ const CustomNavbar = ({
                         <TextInput
                             ref={inputRef}
                             style={styles.searchInput}
-                            placeholder="Buscar Malbec, Bodega..."
+                            placeholder="Buscar..."
                             placeholderTextColor="#999"
                             value={searchText}
                             onChangeText={handleChangeText}
@@ -89,8 +84,11 @@ const CustomNavbar = ({
     );
 };
 
+// ... Tus estilos se mantienen igual ...
+
 const styles = StyleSheet.create({
-    navbar: {
+   // ... (copia tus estilos aquí tal cual estaban)
+   navbar: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -104,67 +102,16 @@ const styles = StyleSheet.create({
             android: { elevation: 4 },
         }),
     },
-    leftSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        flex: 1,
-    },
-    rightSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    logo: {
-        fontSize: 20,
-        fontFamily: FONTS.bold, 
-        color: COLORS.textPrimary,
-        letterSpacing: -0.5,
-    },
-    iconButton: {
-        width: 40,
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 20,
-    },
-    activeFilter: {
-        backgroundColor: COLORS.lightPrimary || '#EFEFEF', 
-    },
-    profileButton: {
-        marginLeft: 4,
-    },
-
-    searchContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    searchInputWrapper: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F5F5F5', 
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        height: 40,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 15,
-        color: COLORS.textPrimary,
-        paddingVertical: 0, 
-        height: '100%',
-    },
-    cancelButton: {
-        paddingHorizontal: 4,
-    },
-    cancelText: {
-        color: COLORS.primary || '#007AFF',
-        fontSize: 15,
-        fontWeight: '600',
-    },
+    leftSection: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+    rightSection: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    logo: { fontSize: 20, fontFamily: FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.5 },
+    iconButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
+    profileButton: { marginLeft: 4 },
+    searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+    searchInputWrapper: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', borderRadius: 12, paddingHorizontal: 12, height: 40 },
+    searchInput: { flex: 1, fontSize: 15, color: COLORS.textPrimary, paddingVertical: 0, height: '100%' },
+    cancelButton: { paddingHorizontal: 4 },
+    cancelText: { color: COLORS.primary || '#007AFF', fontSize: 15, fontWeight: '600' },
 });
 
 export default CustomNavbar;

@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../../theme/theme';
 import AuthContext from '../../../../services/context/AuthContext';
 
-const API_URL = process.env.API_URL;
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const ProfileScreen = ({ navigation }) => {
   const { loginRequest, onLogout, loading, user } = useContext(AuthContext);

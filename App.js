@@ -7,6 +7,7 @@ import AuthContextProvider from './services/context/AuthProvider';
 import HistoryProvider from './services/context/HistoryProvider';
 import MainNavigator from './src/components/navigation/MainNavigator'; 
 import ProfileScreen from './src/components/screens/Profile/ProfileScreen';
+import WishListProvider from './services/context/WishListProvider';
 
 const RootStack = createNativeStackNavigator();
 
@@ -31,10 +32,10 @@ export default function App() {
                 options={{
                   presentation: 'modal',
                   animation: 'slide_from_bottom',
-                  headerShown: false 
+                  headerShown: false
                 }}
               />
-
+              
             </RootStack.Navigator>
           </NavigationContainer>
         </HistoryProvider>

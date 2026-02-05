@@ -1,10 +1,9 @@
-import React, { useContext } from 'react';
+import React from 'react'; // Ya no necesitas useContext ni AuthContext aquí
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
-import AuthContext from '../../../services/context/AuthContext';
-
+// Nota: Ya no importamos AuthContext porque la protección está DENTRO de las pantallas
 import HomeScreen from '../screens/HomeStack/HomeScreen';
 import WineDetailScreen from '../screens/WineDetail/WineDetailScreen';
 import HistoryScreen from '../screens/History/HistoryScreen';
@@ -31,14 +30,8 @@ function HomeStack() {
 }
 
 export default function MainNavigator() {
-  const { isAuthenticated, openAuthModal } = useContext(AuthContext);
-
-  const handleProtectedTabPress = (e) => {
-    if (!isAuthenticated) {
-      e.preventDefault(); 
-      openAuthModal('login'); 
-    }
-  };
+  // 1. ELIMINAMOS handleProtectedTabPress
+  // Queremos que el usuario SI entre a la pestaña para ver el mensaje de "Login Requerido"
 
   return (
     <Tab.Navigator
@@ -65,18 +58,14 @@ export default function MainNavigator() {
         name="Favorites" 
         component={FavoritesScreen} 
         options={{ title: 'Favoritos' }}
-        listeners={{
-          tabPress: handleProtectedTabPress, 
-        }}
+        // 2. ELIMINAMOS LA PROP 'listeners' AQUÍ
       />
 
       <Tab.Screen 
         name="History" 
         component={HistoryScreen} 
         options={{ title: 'Historial' }}
-        listeners={{
-          tabPress: handleProtectedTabPress,
-        }}
+        // 3. ELIMINAMOS LA PROP 'listeners' AQUÍ TAMBIÉN
       />
     </Tab.Navigator>
   );

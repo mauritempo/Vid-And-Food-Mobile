@@ -1,6 +1,6 @@
 import { decode as base64Decode } from 'base-64';
 
-const API_URL = process.env.API_URL;
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 async function handleResponse(response) {
   const data = await response.json().catch(() => ({}));

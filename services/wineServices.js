@@ -2,11 +2,12 @@ import { fetch } from 'expo/fetch';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TOKEN_KEY = 'vf-token';
-const API_URL = process.env.API_URL;
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export const getWines = async () => {
     try {
         const response = await fetch(`${API_URL}/Wine/all-wines`);
+        console.log(response)
 
         if (!response.ok) {
             throw new Error(`Error en la petición al servidor: ${response.statusText}`);
@@ -16,6 +17,51 @@ export const getWines = async () => {
         return data;
     } catch (error) {
         console.error("Error fetching wines:", error);
+        throw error;
+    }
+};
+
+export const addReview = async (wineId, { score, comment }, token) => {
+    const tokenToUse = token ?? await AsyncStorage.getItem(TOKEN_KEY);
+
+    if (!tokenToUse) {
+        throw new Error("Token de autenticación no proporcionado.");
+    }
+
+    const url = `${API_URL}/Wine/${wineId}/rate`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenToUse}`,
+            },
+            body: JSON.stringify({
+                score: score,
+                review: comment // El backend probablemente espera "review" o "comment" en el DTO
+            }),
+        });
+
+        if (!response.ok) {
+            // Manejo robusto de errores (texto o json)
+            const errorText = await response.text();
+            let errorMessage = `Error ${response.status}`;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMessage = errorJson.message || errorJson.title || errorText;
+            } catch (e) {
+                errorMessage = errorText;
+            }
+            console.error("❌ Error enviando reseña:", errorMessage);
+            throw new Error(errorMessage);
+        }
+
+        // Si devuelve 200 OK
+        return true;
+
+    } catch (error) {
+        console.error("Excepción en addReview:", error);
         throw error;
     }
 };
@@ -36,7 +82,7 @@ export const getWineById = async (id) => {
 
         const data = await response.json();
         console.log(data)
-        return data; 
+        return data;
 
     } catch (error) {
         console.error("Error en getWineById:", error);
@@ -172,14 +218,13 @@ export const removeHistory = async (wineId, token) => {
 
 
 export const fetchFavourites = async (token) => {
-    const tokenToUse = token ?? await AsyncStorage.getItem(TOKEN_KEY); 
-    
-    if (!tokenToUse) { 
+    const tokenToUse = token ?? await AsyncStorage.getItem(TOKEN_KEY);
+
+    if (!tokenToUse) {
         throw new Error("Token de autenticación no proporcionado.");
     }
 
     try {
-            
         const response = await fetch(`${API_URL}/WineUser/favorites`, {
             method: 'GET',
             headers: {
@@ -188,30 +233,44 @@ export const fetchFavourites = async (token) => {
             },
         });
 
+        const responseText = await response.text();
+
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Error al obtener favoritos: ${response.status}`);
+            let errorMessage = `Error ${response.status}`;
+            try {
+                const errorJson = JSON.parse(responseText);
+                errorMessage = errorJson.message || errorJson.title || responseText;
+            } catch (e) {
+                errorMessage = responseText;
+            }
+            throw new Error(errorMessage);
         }
-        
-        return await response.json(); 
-        
-    } catch (error) { 
+
+        try {
+            return JSON.parse(responseText);
+        } catch (e) {
+            console.error("El servidor devolvió 200 OK pero no es un JSON válido:", responseText);
+            // Si la respuesta es vacía o texto plano, retornamos array vacío para no romper la app
+            return [];
+        }
+
+    } catch (error) {
         console.error("Error en fetchFavourites:", error);
-        throw error; 
+        throw error;
     }
 };
 
 export const fetchHistory = async (token) => {
     if (!token) {
-        return []; 
+        return [];
     }
     const url = `${API_URL}/WineUser/history`
     try {
-        const response = await fetch(url,{
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`, 
+                Authorization: `Bearer ${token}`,
             },
         });
 
@@ -228,17 +287,17 @@ export const fetchHistory = async (token) => {
         }
 
         const data = await response.json();
-        
+
         if (!Array.isArray(data)) {
-             console.warn('fetchHistory: La API no devolvió un array. Devolviendo vacío.');
-             return [];
+            console.warn('fetchHistory: La API no devolvió un array. Devolviendo vacío.');
+            return [];
         }
 
         const ids = data.map((item) => {
             if (typeof item === 'string' || typeof item === 'number') {
-                return item.toString();  
+                return item.toString();
             }
-            
+
             if (item) {
                 if (item.wine && (item.wine.id || item.wine._id)) {
                     return (item.wine.id ?? item.wine._id).toString();
@@ -246,7 +305,7 @@ export const fetchHistory = async (token) => {
                 return (item.id ?? item.wineId ?? item._id)?.toString();
             }
             return null;
-        }).filter(Boolean); 
+        }).filter(Boolean);
 
         return ids;
 

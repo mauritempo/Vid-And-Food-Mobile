@@ -14,35 +14,32 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
-import AuthContext from '../../../../services/context/AuthContext';
-import * as WineService from '../../../../services/wineServices';
 import SubscribeScreen from '../Suscribe/SuscribeScreen';
 import CustomNavbar from '../../common/ui/nav-bar/CustomNavbar';
 import WineCard from '../../ui/WineCard';
+
 import { COLORS } from '../../../theme/theme';
+
+// ---------------------------------------------------------
+// CORRECCIÓN 1: Importar fetchFavourites (para obtener lista), no addFavorite
+// ---------------------------------------------------------
+import { fetchFavourites } from '../../../../services/wineServices'; 
+import AuthContext from '../../../../services/context/AuthContext';
+import LoginRequired from '../../screen/LoguinRequired';
 
 const FavoritesScreen = ({ navigation }) => {
   const { token, isAuthenticated, user } = useContext(AuthContext);
 
   const [favourites, setFavourites] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); 
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const role = user?.role;
-  const hasSommelierAccess =
-    isAuthenticated && (role === 'Sommelier' || role === 'Admin');
+  const isSommelier = role === 'Sommelier' || role === 'Admin';
 
   const loadFavourites = useCallback(async () => {
-    if (!isAuthenticated || !token) {
-      setLoading(false);
-      setFavourites([]);
-      return;
-    }
-
-    if (!hasSommelierAccess) {
-      setLoading(false);
-      setFavourites([]);
+    if (!isAuthenticated || !token || !isSommelier) {
       return;
     }
 
@@ -50,7 +47,11 @@ const FavoritesScreen = ({ navigation }) => {
     setError(null);
 
     try {
-      const rawData = await WineService.fetchFavourites(token);
+      // ---------------------------------------------------------
+      // CORRECCIÓN 2: Usar fetchFavourites(token)
+      // Antes tenías addFavorite(token), lo cual enviaba el token como ID al backend
+      // ---------------------------------------------------------
+      const rawData = await fetchFavourites(token);
 
       const normalized = Array.isArray(rawData)
         ? rawData.map((w) => ({
@@ -68,7 +69,7 @@ const FavoritesScreen = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, token, hasSommelierAccess]);
+  }, [isAuthenticated, token, isSommelier]);
 
   useFocusEffect(
     useCallback(() => {
@@ -89,7 +90,24 @@ const FavoritesScreen = ({ navigation }) => {
     return result;
   }, [favourites, searchQuery]);
 
-  if (!hasSommelierAccess && !loading) {
+  // CASO 1: NO ESTÁ LOGUEADO
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+        <CustomNavbar 
+            showSearch={false} 
+            onProfilePress={() => navigation.navigate('Profile')} 
+        />
+        <LoginRequired 
+            navigation={navigation}
+            message="Inicia sesión para ver tus vinos favoritos."
+        />
+      </SafeAreaView>
+    );
+  }
+
+  // CASO 2: LOGUEADO PERO NO ES SOMMELIER
+  if (!isSommelier) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
         <SubscribeScreen navigation={navigation} />
@@ -97,6 +115,7 @@ const FavoritesScreen = ({ navigation }) => {
     );
   }
 
+  // UI NORMAL
   if (loading) {
     return (
       <View style={styles.center}>
@@ -121,7 +140,7 @@ const FavoritesScreen = ({ navigation }) => {
         edges={['top']}
       >
         <CustomNavbar
-          showFilters={false}
+          showSearch={true}
           onSearchChange={setSearchQuery}
           onProfilePress={() => navigation.navigate('Profile')}
         />
