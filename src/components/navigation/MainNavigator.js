@@ -1,13 +1,15 @@
-import React from 'react'; // Ya no necesitas useContext ni AuthContext aquí
+import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
-// Nota: Ya no importamos AuthContext porque la protección está DENTRO de las pantallas
 import HomeScreen from '../screens/HomeStack/HomeScreen';
 import WineDetailScreen from '../screens/WineDetail/WineDetailScreen';
 import HistoryScreen from '../screens/History/HistoryScreen';
 import FavoritesScreen from '../screens/Favorites/FavoriteScreen';
+import SettingsScreen from '../screen/Profile/SettingScreen';
+
+// 1. IMPORTA TU PANTALLA AQUÍ (Ajusta la ruta si es necesario)
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -20,19 +22,27 @@ function HomeStack() {
         component={HomeScreen} 
         options={{ headerShown: false }} 
       />
+      
       <Stack.Screen 
         name="WineDetail" 
         component={WineDetailScreen} 
         options={{ title: 'Detalle del Vino', headerBackTitle: 'Volver' }} 
+      />
+
+      {/* 2. ESTA ES LA LÍNEA QUE TE FALTA. Sin esto, el error 'NAVIGATE' no se va */}
+      <Stack.Screen 
+        name="Settings" 
+        component={SettingsScreen} 
+        options={{ 
+            headerShown: false,
+            animation: 'slide_from_right' 
+        }} 
       />
     </Stack.Navigator>
   );
 }
 
 export default function MainNavigator() {
-  // 1. ELIMINAMOS handleProtectedTabPress
-  // Queremos que el usuario SI entre a la pestaña para ver el mensaje de "Login Requerido"
-
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -58,14 +68,12 @@ export default function MainNavigator() {
         name="Favorites" 
         component={FavoritesScreen} 
         options={{ title: 'Favoritos' }}
-        // 2. ELIMINAMOS LA PROP 'listeners' AQUÍ
       />
 
       <Tab.Screen 
         name="History" 
         component={HistoryScreen} 
         options={{ title: 'Historial' }}
-        // 3. ELIMINAMOS LA PROP 'listeners' AQUÍ TAMBIÉN
       />
     </Tab.Navigator>
   );

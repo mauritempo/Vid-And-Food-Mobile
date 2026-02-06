@@ -47,3 +47,47 @@ export const upgradeToSommelier = async (token) => {
         throw error;
     }
 };
+
+
+export const downgradeToUser = async (token) => {
+    const tokenToUse = token ?? await AsyncStorage.getItem(TOKEN_KEY);
+    console.log('Token que se usa en Authorization (Downgrade):', tokenToUse);
+
+    if (!tokenToUse) {
+        throw new Error("Token de autenticación no proporcionado.");
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/User/downgrade-to-user`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${tokenToUse}`,
+            },
+        });
+
+        const text = await response.text();
+        console.log('downgradeToUser status:', response.status);
+        console.log('downgradeToUser raw body:', text);
+
+        let data = null;
+        if (text) {
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.warn('No se pudo parsear JSON en downgrade, body:', text);
+            }
+        }
+
+        if (!response.ok) {
+            throw new Error(data?.message || `Error al dar de baja la suscripción: ${response.status}`);
+        }
+
+        return data ?? { success: true };
+
+    } catch (error) {
+        console.error("Error en downgradeToUser:", error);
+        throw error;
+    }
+};

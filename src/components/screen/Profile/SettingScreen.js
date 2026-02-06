@@ -4,42 +4,34 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   Alert,
+  ScrollView, // <--- Importamos esto
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context'; 
 import { Ionicons } from '@expo/vector-icons';
-
-import AuthContext from '../../../services/context/AuthContext';
-import { upgradeToSommelier } from '../../../services/UserService';
-import { COLORS } from '../../theme/theme';
+import AuthContext from '../../../../services/context/AuthContext';
+import { upgradeToSommelier, downgradeToUser } from '../../../../services/UserService';
 import { useRoute } from '@react-navigation/native';
-
+import LoginRequired from '../../screen/LoguinRequired';
 
 const SettingsScreen = ({ navigation }) => {
   const { user, token, onLogin } = useContext(AuthContext);
+  const route = useRoute();
 
   const [membership, setMembership] = useState(user?.role || 'User');
   const [saving, setSaving] = useState(false);
 
-   useEffect(() => {
-        if (user && useRoute.params?.from === 'RestrictedArea') {
-        // Si hay usuario Y venimos de una zona restringida, volvemos atrás
-        if (navigation.canGoBack()) {
-            navigation.goBack();
-        }
-        }
-    }, [user, useRoute.params, navigation]);
+  useEffect(() => {
+    if (user && route.params?.from === 'RestrictedArea') {
+      if (navigation.canGoBack()) navigation.goBack();
+    }
+  }, [user, route.params, navigation]);
 
   useEffect(() => {
-    if (user?.role) {
-      setMembership(user.role);
-    }
+    if (user?.role) setMembership(user.role);
   }, [user]);
 
-  // ---------------------------------------------------------
-  // 2. LÓGICA DE PROTECCIÓN (Visualmente consistente)
-  // ---------------------------------------------------------
   if (!user) {
     return (
       <SafeAreaView style={styles.container}>
@@ -48,84 +40,56 @@ const SettingsScreen = ({ navigation }) => {
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Configuración</Text>
-          <View style={{ width: 24 }} />
         </View>
-        
-        {/* Usamos el componente estandarizado */}
-        <LoginRequired 
-            navigation={navigation} 
-            message="Inicia sesión para gestionar tu suscripción y datos." 
-        />
+        <LoginRequired navigation={navigation} message="Inicia sesión para gestionar tu cuenta." />
       </SafeAreaView>
     );
   }
 
   const currentRole = user.role;
+  const isChanging = currentRole !== membership;
 
-  const handleSelectMembership = (plan) => {
-    // Evitar que un Admin se baje el rango por error, o lógica visual simple
-    setMembership(plan);
-  };
-
-  // ---------------------------------------------------------
-  // 3. LÓGICA DE NEGOCIO (El Upgrade real)
-  // ---------------------------------------------------------
   const handleSave = async () => {
     if (!token) return;
+    if (!isChanging) return;
 
-    // Si no hubo cambios
-    if (currentRole === membership) {
-      Alert.alert('Sin cambios', 'Tu suscripción ya es ' + membership);
+    const isDowngrade = currentRole === 'Sommelier' && membership === 'User';
+
+    if (isDowngrade) {
+      Alert.alert(
+        'Confirmar Baja',
+        '¿Estás seguro? Perderás acceso a tus favoritos.',
+        [
+          { text: 'No, mantener', style: 'cancel', onPress: () => setMembership(currentRole) },
+          { text: 'Sí, bajar a User', style: 'destructive', onPress: () => executePlanChange('User') }
+        ]
+      );
       return;
     }
 
-    // Validación: Solo permitimos Upgrade de User -> Sommelier en la app
-    // (Opcional: podrías permitir downgrade si tu backend lo soporta)
-    const isUpgrade = currentRole === 'User' && membership === 'Sommelier';
-    
-    if (!isUpgrade && currentRole !== 'Admin') { 
-       // Si intenta otra cosa y no es admin
-       Alert.alert('Acción no permitida', 'Por ahora solo puedes mejorar tu plan a Sommelier.');
-       setMembership(currentRole);
-       return;
-    }
+    executePlanChange('Sommelier');
+  };
 
+  const executePlanChange = async (targetPlan) => {
     setSaving(true);
     try {
-      // Llamada al backend
-      const response = await upgradeToSommelier(token);
+      let response = targetPlan === 'Sommelier' 
+        ? await upgradeToSommelier(token) 
+        : await downgradeToUser(token);
 
-      // Actualizamos el Contexto Global para que "FavoritesScreen" se desbloquee automáticamente
-      const newToken = response?.token || token;
-      const updatedUser = { ...user, role: 'Sommelier' };
-      
-      onLogin(updatedUser, newToken); 
-
-      Alert.alert(
-        '¡Felicidades!',
-        'Ahora eres Sommelier. Ya puedes acceder a tus vinos Favoritos.',
-        [
-            { 
-                text: 'Ir a Favoritos', 
-                onPress: () => navigation.navigate('Favorites') // Opcional: llevarlo directo
-            },
-            { text: 'OK' }
-        ]
-      );
+      onLogin({ ...user, role: targetPlan }, response?.token || token); 
+      Alert.alert('Éxito', `Tu plan ahora es ${targetPlan}`);
     } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'No se pudo procesar la suscripción. Intenta nuevamente.');
-      setMembership(currentRole); // Revertir visualmente
+      Alert.alert('Error', 'No se pudo procesar el cambio.');
+      setMembership(currentRole);
     } finally {
       setSaving(false);
     }
   };
 
-  const membershipPlans = ['User', 'Sommelier']; 
-  // Ocultamos Admin de la UI de selección normal para que no se confundan
-
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header Fijo */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000" />
@@ -134,121 +98,68 @@ const SettingsScreen = ({ navigation }) => {
         <View style={{ width: 24 }} />
       </View>
 
-      <View style={styles.content}>
-        {/* Datos de Usuario */}
+      {/* Contenido Scrolleable (Aquí está la solución) */}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.label}>Correo electrónico</Text>
-        <View style={styles.readonlyBox}>
-            <Text style={styles.readonlyText}>{user.email}</Text>
-        </View>
+        <View style={styles.readonlyBox}><Text style={styles.readonlyText}>{user.email}</Text></View>
 
         <Text style={[styles.label, { marginTop: 16 }]}>Nombre</Text>
-        <View style={styles.readonlyBox}>
-            <Text style={styles.readonlyText}>{user.name || user.fullName || 'Usuario'}</Text>
-        </View>
+        <View style={styles.readonlyBox}><Text style={styles.readonlyText}>{user.name || 'Usuario'}</Text></View>
 
-        {/* Selección de Plan */}
         <Text style={[styles.label, { marginTop: 24 }]}>Tipo de Suscripción</Text>
         <View style={styles.membershipRow}>
-          {membershipPlans.map((plan) => {
-            const isSelected = membership === plan;
-            const isCurrent = currentRole === plan;
-
-            return (
-              <TouchableOpacity
-                key={plan}
-                style={[
-                  styles.membershipPill,
-                  isSelected && styles.membershipPillActive,
-                ]}
-                onPress={() => handleSelectMembership(plan)}
-              >
-                <Text style={[
-                    styles.membershipText,
-                    isSelected && styles.membershipTextActive
-                ]}>
-                  {plan}
-                </Text>
-                {isCurrent && (
-                    <Text style={[
-                        styles.membershipTag, 
-                        isSelected && { color: '#EEE' }
-                    ]}> (Actual)</Text>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+          {['User', 'Sommelier'].map((plan) => (
+            <TouchableOpacity
+              key={plan}
+              style={[styles.membershipPill, membership === plan && styles.membershipPillActive]}
+              onPress={() => setMembership(plan)}
+            >
+              <Text style={[styles.membershipText, membership === plan && styles.membershipTextActive]}>{plan}</Text>
+              {currentRole === plan && <Text style={[styles.membershipTag, membership === plan && { color: '#EEE' }]}> (Actual)</Text>}
+            </TouchableOpacity>
+          ))}
         </View>
 
         <Text style={styles.helperText}>
-          Al ser Sommelier desbloquearás la sección de Favoritos y recomendaciones premium.
+          {membership === 'Sommelier' 
+            ? 'Activarás favoritos y perfil sensorial.' 
+            : 'Volverás al plan básico. Se bloquearán funciones premium.'}
         </Text>
 
-        <TouchableOpacity
-          style={[styles.saveButton, { opacity: saving ? 0.7 : 1 }]}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <Text style={styles.saveButtonText}>
-                {currentRole === membership ? 'Guardar' : 'Actualizar Plan'}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
+        {/* BOTÓN DINÁMICO: Aparece solo si cambias algo */}
+        {isChanging && (
+          <TouchableOpacity
+            style={[styles.saveButton, membership === 'User' && { backgroundColor: '#FF3B30' }]}
+            onPress={handleSave}
+            disabled={saving}
+          >
+            {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveButtonText}>Confirmar Cambio a {membership}</Text>}
+          </TouchableOpacity>
+        )}
+        
+        <View style={{ height: 100 }} /> 
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
-// ... Tus estilos se mantienen igual ...
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  backButton: { padding: 4 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
-  content: { flex: 1, paddingHorizontal: 20, paddingTop: 10 },
-  label: { fontSize: 14, fontWeight: '600', marginBottom: 6, color: '#333' },
-  readonlyBox: {
-    backgroundColor: '#F4F5F7',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
+  backButton: { padding: 4 },
+  content: { flex: 1, paddingHorizontal: 20 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 6, color: '#333', marginTop: 15 },
+  readonlyBox: { backgroundColor: '#F4F5F7', borderRadius: 10, padding: 12 },
   readonlyText: { color: '#555' },
-  helperText: { fontSize: 12, color: '#888', marginTop: 8, fontStyle: 'italic' },
   membershipRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  membershipPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#CCC',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF'
-  },
-  membershipPillActive: {
-    backgroundColor: COLORS.primary || '#000',
-    borderColor: COLORS.primary || '#000',
-  },
-  membershipText: { color: '#333', fontSize: 14, fontWeight: '500' },
+  membershipPill: { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#CCC', alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
+  membershipPillActive: { backgroundColor: '#000', borderColor: '#000' },
+  membershipText: { fontWeight: '600', color: '#333' },
   membershipTextActive: { color: '#FFF' },
-  membershipTag: { fontSize: 12, marginLeft: 4, color: '#666' },
-  saveButton: {
-    marginTop: 30,
-    backgroundColor: COLORS.primary || '#000',
-    borderRadius: 12,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  membershipTag: { fontSize: 10, marginLeft: 4, color: '#666' },
+  helperText: { fontSize: 13, color: '#888', marginTop: 15, fontStyle: 'italic', textAlign: 'center' },
+  saveButton: { marginTop: 30, backgroundColor: '#000', borderRadius: 12, height: 55, justifyContent: 'center', alignItems: 'center', shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 5, elevation: 3 },
   saveButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
 });
 

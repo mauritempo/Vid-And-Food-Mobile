@@ -3,10 +3,28 @@ import { decode as base64Decode } from 'base-64';
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 async function handleResponse(response) {
-  const data = await response.json().catch(() => ({}));
+  const raw = await response.text(); // SIEMPRE leemos texto primero
+
+  console.log("HTTP", response.status, response.url);
+  console.log("RAW BODY:", raw);
+
+  let data = {};
+  if (raw) {
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = { raw };
+    }
+  }
 
   if (!response.ok) {
-    const message = data.message || 'Error al comunicarse con el servidor';
+    const message =
+      data.message ||
+      data.title ||              // típico ProblemDetails de .NET
+      data.error ||
+      data.raw ||
+      `HTTP ${response.status}`;
+
     throw new Error(message);
   }
 

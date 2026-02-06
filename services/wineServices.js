@@ -1,4 +1,3 @@
-import { fetch } from 'expo/fetch';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TOKEN_KEY = 'vf-token';
@@ -6,6 +5,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export const getWines = async () => {
     try {
+        console.log(`${API_URL}/Wine/all-wines`)
         const response = await fetch(`${API_URL}/Wine/all-wines`);
         console.log(response)
 

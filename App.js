@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'react-native';
 
+import SettingsScreen from './src/components/screen/Profile/SettingScreen';
 import AuthContextProvider from './services/context/AuthProvider'; 
 import HistoryProvider from './services/context/HistoryProvider';
 import MainNavigator from './src/components/navigation/MainNavigator'; 
@@ -35,6 +36,7 @@ export default function App() {
                   headerShown: false
                 }}
               />
+              
               
             </RootStack.Navigator>
           </NavigationContainer>

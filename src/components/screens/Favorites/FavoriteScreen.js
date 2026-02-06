@@ -47,10 +47,6 @@ const FavoritesScreen = ({ navigation }) => {
     setError(null);
 
     try {
-      // ---------------------------------------------------------
-      // CORRECCIÓN 2: Usar fetchFavourites(token)
-      // Antes tenías addFavorite(token), lo cual enviaba el token como ID al backend
-      // ---------------------------------------------------------
       const rawData = await fetchFavourites(token);
 
       const normalized = Array.isArray(rawData)
