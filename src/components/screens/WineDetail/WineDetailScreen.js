@@ -46,9 +46,11 @@ const WineDetailScreen = ({ route, navigation }) => {
 
     const [showLoginModal, setShowLoginModal] = useState(false);
 
-    const { isAuthenticated, token } = useContext(AuthContext);
+    const { isAuthenticated, token, user } = useContext(AuthContext);
     const { isFavorite: isFavInContext, toggleFavorite } = useContext(WishListContext);
     const { isInHistory: isInHistoryInContext, toggleHistoryLocal } = useContext(HistoryContext);
+
+    const currentUserId = user?.id || user?.userId;
 
     useFocusEffect(
         useCallback(() => {
@@ -91,10 +93,10 @@ const WineDetailScreen = ({ route, navigation }) => {
                 const response = await getWineById(initialData.id);
 
                 const actualWineData = response.wine ? response.wine : response;
-                const actualReviews = response.reviews || []; // Si es null, usa array vacío
+                const actualReviews = response.reviews || []; 
 
                 setWine(prev => ({ ...prev, ...actualWineData }));
-                setReviews(actualReviews); // Guardamos las reseñas reales
+                setReviews(actualReviews); 
 
             } catch (error) { 
                 console.error("Error trayendo detalles:", error); 
@@ -102,6 +104,36 @@ const WineDetailScreen = ({ route, navigation }) => {
                 setLoading(false); 
             }
         }
+    };
+
+    const handleDeleteReview = (wineId) => {
+        Alert.alert(
+            "Eliminar reseña",
+            "¿Estás seguro de que quieres borrar tu comentario?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                { 
+                    text: "Eliminar", 
+                    style: "destructive", 
+                    onPress: async () => {
+                        try {
+                            await deleteReview(wineId, token); // Llamada al endpoint [HttpDelete("{WineId:guid}/rate-delete")]
+                            Alert.alert("Éxito", "Reseña eliminada.");
+                            fetchFullDetails(); // Recargamos para actualizar la lista
+                        } catch (e) {
+                            Alert.alert("Error", "No se pudo eliminar la reseña.");
+                        }
+                    } 
+                }
+            ]
+        );
+    };
+
+    const handleEditReview = (existingReview) => {
+        setUserRating(existingReview.score);
+        setUserReviewText(existingReview.review || existingReview.comment);
+        setModalVisible(true); 
+
     };
 
     
@@ -249,44 +281,64 @@ const handleCloseModal = () => {
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
                             <Text style={styles.sectionTitle}>Reseñas</Text>
                             <View style={styles.reviewCountBadge}>
-                                {/* Usamos el largo del array real */}
                                 <Text style={styles.reviewCountText}>{reviews.length}</Text>
                             </View>
                         </View>
 
                         {/* 4. RENDERIZADO DE LA LISTA O MENSAJE VACÍO */}
-                        {reviews && reviews.length > 0 ? (
-                            reviews.map((item) => (
-                                <View key={item.id} style={styles.reviewItem}>
-                                    <View style={styles.reviewHeader}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            <View style={styles.avatarPlaceholder}>
-                                                <Text style={styles.avatarText}>
-                                                    {item.userName ? item.userName.charAt(0).toUpperCase() : 'A'}
-                                                </Text>
+                       {reviews && reviews.length > 0 ? (
+                            reviews.map((item) => {
+                                const isMyReview = user && (item.userId === user.id || item.userId === user.userId);
+
+                                return (
+                                    <View key={item.id} style={[styles.reviewItem, isMyReview && styles.myReviewItem]}>
+                                        <View style={styles.reviewHeader}>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                                                <View style={styles.avatarPlaceholder}>
+                                                    <Text style={styles.avatarText}>
+                                                        {item.userName ? item.userName.charAt(0).toUpperCase() : 'U'}
+                                                    </Text>
+                                                </View>
+                                                <View style={{ flex: 1 }}>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                        <Text style={styles.reviewUser}>
+                                                            {item.userName || "Anónimo"}
+                                                        </Text>
+                                                        {isMyReview && <Text style={styles.myBadge}> (Tú)</Text>}
+                                                    </View>
+                                                    {item.isSommelierReview && (
+                                                        <Text style={{ fontSize: 10, color: COLORS.primary, fontWeight: 'bold' }}>Sommelier</Text>
+                                                    )}
+                                                </View>
                                             </View>
-                                            <View>
-                                                <Text style={styles.reviewUser}>
-                                                    {item.userName || "Anónimo"}
-                                                </Text>
-                                                {/* Opcional: Mostrar fecha o badge de Sommelier */}
-                                                {item.isSommelierReview && (
-                                                    <Text style={{fontSize: 10, color: COLORS.primary, fontWeight:'bold'}}>Sommelier</Text>
-                                                )}
-                                            </View>
+
+                                            {/* BOTONES DE ACCIÓN: Solo se muestran si es mi reseña */}
+                                            {isMyReview && (
+                                                <View style={styles.actionButtons}>
+                                                    <TouchableOpacity 
+                                                        onPress={() => handleEditReview(item)} 
+                                                        style={{ marginRight: 15 }}
+                                                    >
+                                                        <Ionicons name="create-outline" size={20} color="#666" />
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity onPress={() => handleDeleteReview(wine.id)}>
+                                                        <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            )}
                                         </View>
-                                        <View style={{ flexDirection: 'row' }}>
+
+                                        <View style={{ flexDirection: 'row', marginVertical: 5 }}>
                                             {renderStars(item.score)}
                                         </View>
+
+                                        <Text style={styles.reviewComment}>
+                                            {item.review || item.comment || ""}
+                                        </Text>
                                     </View>
-                                    {/* Backend manda 'review' o 'comment', chequeamos ambos */}
-                                    <Text style={styles.reviewComment}>
-                                        {item.review || item.comment || ""}
-                                    </Text>
-                                </View>
-                            ))
+                                );
+                            })
                         ) : (
-                            // 5. CARTEL CUANDO NO HAY RESEÑAS
                             <View style={styles.emptyReviewsContainer}>
                                 <Ionicons name="chatbubble-ellipses-outline" size={40} color="#DDD" />
                                 <Text style={styles.emptyReviewsText}>No hay reseñas todavía.</Text>
@@ -430,6 +482,22 @@ const styles = StyleSheet.create({
     textInput: { backgroundColor: '#F5F5F5', borderRadius: 12, padding: 12, height: 100, textAlignVertical: 'top', fontSize: 15, color: '#333', marginBottom: 24 },
     submitButton: { backgroundColor: COLORS.primary || '#000', borderRadius: 12, marginBottom: 12, paddingVertical: 14, alignItems: 'center' },
     submitButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+
+    myReviewItem: {
+        borderColor: COLORS.primary,
+        borderWidth: 1,
+        backgroundColor: '#FFF9FA',
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingLeft: 10,
+    },
+    myBadge: {
+        fontSize: 12,
+        color: COLORS.primary,
+        fontWeight: '600',
+    },
     
     // 6. ESTILOS PARA ESTADO VACÍO
     emptyReviewsContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 20 },

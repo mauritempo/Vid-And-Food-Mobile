@@ -10,24 +10,22 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  TouchableOpacity, // Agregado
-  Alert,           // Agregado
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons'; // Agregado
-import { Swipeable } from 'react-native-gesture-handler'; // Agregado
+import { Ionicons } from '@expo/vector-icons';
 
 import SubscribeScreen from '../Suscribe/SuscribeScreen';
 import CustomNavbar from '../../common/ui/nav-bar/CustomNavbar';
 import WineCard from '../../ui/WineCard';
 import { COLORS } from '../../../theme/theme';
 
-// Importamos el servicio para eliminar (Asegúrate de que toggleFavorite o remove existan)
 import { fetchFavourites, toggleFavorite } from '../../../../services/wineServices'; 
 import AuthContext from '../../../../services/context/AuthContext';
 import LoginRequired from '../../screen/LoguinRequired';
-
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 const FavoritesScreen = ({ navigation }) => {
   const { token, isAuthenticated, user } = useContext(AuthContext);
 
@@ -71,8 +69,9 @@ const FavoritesScreen = ({ navigation }) => {
 
   const handleDeleteFavorite = async (wineId) => {
     try {
-      await removeFavorite(wineId, token); 
-
+      // Optimistic Update
+      setFavourites(favourites.filter(item => item.id !== wineId));
+      await toggleFavorite(wineId, token); 
     } catch (e) {
       Alert.alert('Error', 'No se pudo eliminar de favoritos');
       loadFavourites(); 
@@ -94,7 +93,7 @@ const FavoritesScreen = ({ navigation }) => {
     <Swipeable
       renderRightActions={() => renderRightActions(item.id)}
       rightThreshold={40}
-      friction={2} // Hace que el deslizamiento se sienta más "pesado" y premium
+      friction={2}
     >
       <View style={styles.cardContainer}>
         <WineCard
@@ -118,11 +117,31 @@ const FavoritesScreen = ({ navigation }) => {
     return result;
   }, [favourites, searchQuery]);
 
-  // Renderizados condicionales (isAuthenticated, isSommelier, loading)...
-  // (Mantener igual que en tu código original hasta el FlatList)
+  // --- RENDERIZADOS CONDICIONALES CORREGIDOS ---
 
-  if (!isAuthenticated) { /* ... igual ... */ }
-  if (!isSommelier) { /* ... igual ... */ }
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+        <CustomNavbar 
+            showSearch={false} 
+            onProfilePress={() => navigation.navigate('Profile')} 
+        />
+        <LoginRequired 
+            navigation={navigation}
+            message="Inicia sesión para ver tus vinos favoritos."
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (!isSommelier) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+        <SubscribeScreen navigation={navigation} />
+      </SafeAreaView>
+    );
+  }
+
   if (loading && favourites.length === 0) {
     return (
       <View style={styles.center}>
@@ -145,6 +164,12 @@ const FavoritesScreen = ({ navigation }) => {
       </SafeAreaView>
 
       <View style={styles.content}>
+        {error && (
+          <Text style={{ color: 'red', textAlign: 'center', margin: 10 }}>
+            {error}
+          </Text>
+        )}
+
         <FlatList
           data={filteredFavorites}
           renderItem={renderWineItem}
@@ -154,7 +179,7 @@ const FavoritesScreen = ({ navigation }) => {
           ListEmptyComponent={() => (
             <View style={styles.center}>
               <Text style={{ color: '#888', marginTop: 20, fontSize: 16 }}>
-                {!error ? 'No tienes vinos favoritos aún.' : 'Error al cargar.'}
+                {!error ? 'No tienes vinos favoritos aún.' : ''}
               </Text>
             </View>
           )}
@@ -172,15 +197,14 @@ const styles = StyleSheet.create({
   cardContainer: { 
     marginBottom: 16, 
     backgroundColor: '#fff', 
-    borderRadius: 12 // Recomendado para que el Swipeable no se vea raro
+    borderRadius: 12 
   },
-  // --- Estilos para el Swipeable ---
-   deleteBox: {
+  deleteBox: {
     backgroundColor: '#FF3B30',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 60,
-    height: '88%', // Ajustado para que no tape el margen inferior
+    width: 70,
+    height: '88%', 
     borderRadius: 16,
     marginLeft: 10,
   },

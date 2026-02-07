@@ -69,7 +69,7 @@ export const addReview = async (wineId, { score, comment }, token) => {
             } catch (e) {
                 errorMessage = errorText;
             }
-            console.error("❌ Error enviando reseña:", errorMessage);
+            console.error(" Error enviando reseña:", errorMessage);
             throw new Error(errorMessage);
         }
 
@@ -78,6 +78,78 @@ export const addReview = async (wineId, { score, comment }, token) => {
 
     } catch (error) {
         console.error("Excepción en addReview:", error);
+        throw error;
+    }
+};
+export const updateReview = async (wineId, score, comment, token) => {
+    const url = `${API_URL}/Wine/${wineId}/rate-change`;
+    const tokenToUse = token; // El token viene del AuthContext
+
+    try {
+        const response = await fetch(url, {
+            method: 'PUT', // Usamos PUT como solicitaste
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${tokenToUse}`,
+            },
+            body: JSON.stringify({
+                score: score,
+                review: comment 
+            }),
+        });
+
+        const text = await response.text();
+        let data = null;
+        if (text) {
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.warn('No se pudo parsear JSON en updateReview, body:', text);
+            }
+        }
+
+        if (!response.ok) {
+            throw new Error(data?.message || `Error al actualizar la reseña: ${response.status}`);
+        }
+
+        return data ?? { success: true };
+
+    } catch (error) {
+        console.error("Error en updateReview:", error);
+        throw error;
+    }
+};
+export const deleteReview = async (wineId, token) => {
+    const url = `${API_URL}/Wine/${wineId}/rate-delete`;
+    
+    try {
+        const response = await fetch(url, {
+            method: 'DELETE', // Método DELETE
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            }
+        });
+
+        const text = await response.text();
+        let data = null;
+        if (text) {
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.warn('No se pudo parsear JSON en deleteReview');
+            }
+        }
+
+        if (!response.ok) {
+            throw new Error(data?.message || `Error al eliminar la reseña: ${response.status}`);
+        }
+
+        return data ?? { success: true };
+
+    } catch (error) {
+        console.error("Error en deleteReview:", error);
         throw error;
     }
 };
