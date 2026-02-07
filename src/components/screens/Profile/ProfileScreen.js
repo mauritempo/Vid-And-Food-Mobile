@@ -6,11 +6,10 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  SafeAreaView,
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../../theme/theme';
 import AuthContext from '../../../../services/context/AuthContext';
 

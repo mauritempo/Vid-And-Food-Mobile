@@ -50,7 +50,6 @@ const WineDetailScreen = ({ route, navigation }) => {
     const { isFavorite: isFavInContext, toggleFavorite } = useContext(WishListContext);
     const { isInHistory: isInHistoryInContext, toggleHistoryLocal } = useContext(HistoryContext);
 
-    // Historial (5 segundos)
     useFocusEffect(
         useCallback(() => {
             if (!initialData?.id || !isAuthenticated || !token) return;
@@ -71,7 +70,6 @@ const WineDetailScreen = ({ route, navigation }) => {
         if (!wineIdForActions) return;
         
         if (!isAuthenticated) { 
-            // Si el modal ya estaba abierto por error, lo reseteamos para que reaccione
             setShowLoginModal(false);
             setTimeout(() => {
                 setShowLoginModal(true);
@@ -86,15 +84,12 @@ const WineDetailScreen = ({ route, navigation }) => {
         }
     };
 
-    // Función para cargar datos (extraída para poder reusarla al enviar reseña)
     const fetchFullDetails = async () => {
         if (initialData?.id) {
             try {
                 setLoading(true);
                 const response = await getWineById(initialData.id);
-                
-                // 2. SEPARAR LA RESPUESTA EN VINO Y RESEÑAS
-                // El backend devuelve: { wine: {...}, reviews: [...] }
+
                 const actualWineData = response.wine ? response.wine : response;
                 const actualReviews = response.reviews || []; // Si es null, usa array vacío
 

@@ -7,11 +7,11 @@ import {
     TouchableOpacity,
     FlatList,
     Modal,
-    SafeAreaView,
     Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';  
 import WineCard from '../wines/WineCard'; 
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS } from '../../theme/theme';
 
 const SearchScreen = ({ visible, onClose, onWinePress, wines = [] }) => {

@@ -1,11 +1,10 @@
-import React, { useState, useRef } from 'react';
+import  { useState, useRef } from 'react';
 import {
     View,
     ScrollView,
     Text,
     TouchableOpacity,
     StyleSheet,
-    SafeAreaView
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import CheckBoxFilter from './filters/CheckBoxFilter';

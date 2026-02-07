@@ -3,6 +3,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const TOKEN_KEY = 'vf-token';
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
+export const getWineOfMonth = async () => {
+    try {
+        const response = await fetch(`${API_URL}/Wine/wine-of-month`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+        });
+        if (!response.ok) throw new Error('Error al obtener el vino del mes');
+        return await response.json();
+    } catch (error) {
+        console.error("Error en getWineOfMonth:", error);
+        throw error;
+    }
+};
+
 export const getWines = async () => {
     try {
         console.log(`${API_URL}/Wine/all-wines`)

@@ -122,7 +122,7 @@ const SettingsScreen = ({ navigation }) => {
 
         <Text style={styles.helperText}>
           {membership === 'Sommelier' 
-            ? 'Activarás favoritos y perfil sensorial.' 
+            ? 'Activarás favoritos e historial ilimitado.' 
             : 'Volverás al plan básico. Se bloquearán funciones premium.'}
         </Text>
 

@@ -1,43 +1,34 @@
-import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
-import HomeScreen from '../screens/HomeStack/HomeScreen';
-import WineDetailScreen from '../screens/WineDetail/WineDetailScreen';
+// Importamos las pantallas
+import WineSearchScreen from '../screens/HomeStack/HomeScreen'; // Tu antigua Home (lista de vinos)
 import HistoryScreen from '../screens/History/HistoryScreen';
 import FavoritesScreen from '../screens/Favorites/FavoriteScreen';
 import SettingsScreen from '../screen/Profile/SettingScreen';
+import { COLORS } from '../../theme/theme';
+import MainHomeScreen from '../screens/MAIN/MainScreen';
 
-// 1. IMPORTA TU PANTALLA AQUÍ (Ajusta la ruta si es necesario)
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+// Este Stack es para la pestaña de Inicio
 function HomeStack() {
   return (
-    <Stack.Navigator>
-      <Stack.Screen 
-        name="WineList" 
-        component={HomeScreen} 
-        options={{ headerShown: false }} 
-      />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       
-      <Stack.Screen 
-        name="WineDetail" 
-        component={WineDetailScreen} 
-        options={{ title: 'Detalle del Vino', headerBackTitle: 'Volver' }} 
-      />
+      <Stack.Screen name="MainHome" component={MainHomeScreen} />
+    </Stack.Navigator>
+  );
+}
 
-      {/* 2. ESTA ES LA LÍNEA QUE TE FALTA. Sin esto, el error 'NAVIGATE' no se va */}
-      <Stack.Screen 
-        name="Settings" 
-        component={SettingsScreen} 
-        options={{ 
-            headerShown: false,
-            animation: 'slide_from_right' 
-        }} 
-      />
+// Este Stack es para la pestaña de Vinos (Lupa)
+function WineSearchStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="WineList" component={WineSearchScreen} />
     </Stack.Navigator>
   );
 }
@@ -47,21 +38,28 @@ export default function MainNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: 'purple', 
+        tabBarActiveTintColor: COLORS.primary || 'purple', 
         tabBarInactiveTintColor: 'gray',
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
           if (route.name === 'HomeTab') iconName = focused ? 'home' : 'home-outline';
+          else if (route.name === 'WineSearch') iconName = focused ? 'search' : 'search-outline';
           else if (route.name === 'History') iconName = focused ? 'time' : 'time-outline';
           else if (route.name === 'Favorites') iconName = focused ? 'heart' : 'heart-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
     >
+      
       <Tab.Screen 
         name="HomeTab" 
         component={HomeStack} 
         options={{ title: 'Inicio' }} 
+      />
+      <Tab.Screen 
+        name="WineSearch" 
+        component={WineSearchStack} 
+        options={{ title: 'Explorar' }} 
       />
 
       <Tab.Screen 
