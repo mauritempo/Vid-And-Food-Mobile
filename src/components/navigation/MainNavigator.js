@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import WineSearchScreen from '../screens/HomeStack/HomeScreen'; // Tu antigua Home (lista de vinos)
 import HistoryScreen from '../screens/History/HistoryScreen';
 import FavoritesScreen from '../screens/Favorites/FavoriteScreen';
-import SettingsScreen from '../screen/Profile/SettingScreen';
 import { COLORS } from '../../theme/theme';
 import MainHomeScreen from '../screens/MAIN/MainScreen';
 

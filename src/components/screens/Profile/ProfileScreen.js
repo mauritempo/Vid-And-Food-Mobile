@@ -35,7 +35,7 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleRegister = () => {
-    Alert.alert('Registro', 'Aquí iría tu navegación a la pantalla de registro.');
+    navigation.navigate('Register');
   };
 
   if (user) {

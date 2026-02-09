@@ -91,3 +91,31 @@ export const downgradeToUser = async (token) => {
         throw error;
     }
 };
+
+export const registerUser = async ({ fullName, email, password }) => {
+  try {
+    const response = await fetch(`${API_URL}/User/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fullName,
+        email,
+        password,
+        // Agrega aquí otros campos si tu backend los pide (ej. role: 'User')
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Error al registrar el usuario');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Registration Error:', error);
+    throw error;
+  }
+};
