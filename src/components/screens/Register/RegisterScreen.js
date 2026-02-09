@@ -10,10 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// Ajusta esta ruta a donde tengas tus colores
 import { COLORS } from '../../../theme/theme'; 
 import { registerUser } from '../../../../services/UserService';
-// Importamos el servicio que creamos en el paso 1
 
 const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState('');

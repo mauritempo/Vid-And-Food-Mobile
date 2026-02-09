@@ -1,28 +1,53 @@
 import React, { useContext, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AuthContext from '../../../../services/context/AuthContext';
-import { upgradeToSommelier } from '../../../../services/UserService';
-import { COLORS } from '../../../theme/theme';
 
-const SubscribeScreen = () => {
-    const { token, refreshUser } = useContext(AuthContext); // Asumo que tienes refreshUser para actualizar el rol en la app
+// 1. Asegúrate de importar desde las rutas correctas
+import AuthContext from '../../../../services/context/AuthContext';
+// Ajusta esta ruta a donde tengas tu archivo authService.js
+import { COLORS } from '../../../theme/theme';
+import { upgradeToSommelier } from '../../../../services/UserService';
+
+const SubscribeScreen = ({ navigation }) => {
+    // 2. Extraemos updateSession del contexto
+    const { token, updateSession } = useContext(AuthContext); 
+    
     const [modalVisible, setModalVisible] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const handleUpgrade = async () => {
         setLoading(true);
         try {
-            await upgradeToSommelier(token);
+            const data = await upgradeToSommelier(token);
+
             setModalVisible(false);
-            Alert.alert(
-                "¡Felicidades Sommelier!", 
-                "Tu suscripción se ha activado correctamente.",
-                [{ text: "Excelente", onPress: () => refreshUser && refreshUser() }]
-            );
+
+            // 4. Si recibimos un token nuevo, actualizamos la sesión
+            if (data && data.token) {
+                // Esto actualiza el rol a "Sommelier" en toda la app inmediatamente
+                updateSession(data.token);
+                
+                Alert.alert(
+                    "¡Felicidades Sommelier!", 
+                    "Tu suscripción se ha activado correctamente.",
+                    [{ 
+                        text: "Excelente", 
+                        onPress: () => {
+                            // Opcional: Navegar atrás si venías de Favoritos
+                            if (navigation && navigation.canGoBack()) {
+                                navigation.goBack();
+                            }
+                        } 
+                    }]
+                );
+            } else {
+                // Fallback por si la API no devuelve token pero da OK
+                Alert.alert("Aviso", "Suscripción actualizada. Reinicia la sesión si no ves los cambios.");
+            }
+
         } catch (e) {
             console.error('Upgrade error:', e);
-            Alert.alert("Error", "No pudimos procesar tu suscripción. Intenta de nuevo.");
+            Alert.alert("Error", e.message || "No pudimos procesar tu suscripción. Intenta de nuevo.");
         } finally {
             setLoading(false);
         }

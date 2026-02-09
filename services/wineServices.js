@@ -21,9 +21,7 @@ export const getWineOfMonth = async () => {
 
 export const getWines = async () => {
     try {
-        console.log(`${API_URL}/Wine/all-wines`)
         const response = await fetch(`${API_URL}/Wine/all-wines`);
-        console.log(response)
 
         if (!response.ok) {
             throw new Error(`Error en la petición al servidor: ${response.statusText}`);
@@ -169,7 +167,6 @@ export const getWineById = async (id) => {
         }
 
         const data = await response.json();
-        console.log(data)
         return data;
 
     } catch (error) {
@@ -227,7 +224,6 @@ export const removeFavorite = async (wineId, token) => {
             },
         });
 
-        console.log(tokenToUse)
 
         if (!response.ok) {
             let bodyText = null;
@@ -343,7 +339,7 @@ export const fetchFavourites = async (token) => {
         }
 
     } catch (error) {
-        console.error("Error en fetchFavourites:", error);
+        console.log("Error en fetchFavourites:", error);
         throw error;
     }
 };

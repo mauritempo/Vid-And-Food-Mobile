@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../../theme/theme';
 import { getWineOfMonth } from '../../../../services/wineServices';
+import ProfileScreen from '../Profile/ProfileScreen';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.72;
@@ -29,9 +30,12 @@ const MainHomeScreen = ({ navigation }) => {
         fetchFeatured();
     }, []);
 
-    const openWebsite = () => {
-        Linking.openURL('https://www.vidandfood.com');
+    const openForm = () => {
+        navigation.navigate('Profile');
     };
+    const openWeb = () => {
+        Linking.openURL('https://gemini.google.com');
+    }
 
     const renderFeaturedCard = ({ item }) => (
         <TouchableOpacity 
@@ -129,7 +133,7 @@ const MainHomeScreen = ({ navigation }) => {
                 )}
 
                 {/* --- SECCIÓN IA DE MARIDAJE --- */}
-                <TouchableOpacity style={styles.aiCard} onPress={openWebsite} activeOpacity={0.9}>
+                <TouchableOpacity style={styles.aiCard} onPress={openWeb} activeOpacity={0.9}>
                     <View style={styles.aiContent}>
                         <View style={styles.aiHeader}>
                             <Ionicons name="sparkles" size={20} color="#D4AF37" />
@@ -147,12 +151,44 @@ const MainHomeScreen = ({ navigation }) => {
                 </TouchableOpacity>
 
                 {/* --- FOOTER --- */}
-                <View style={styles.footerCard}>
-                    <Text style={styles.footerTitle}>Nuestra Bodega Digital</Text>
-                    <TouchableOpacity style={styles.webButton} onPress={openWebsite}>
-                        <Ionicons name="globe-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
-                        <Text style={styles.webButtonText}>www.vidandfood.com</Text>
-                    </TouchableOpacity>
+                {/* --- FOOTER (NUEVO DISEÑO MATCH) --- */}
+                <View style={styles.matchCard}>
+                    <View style={styles.matchContentRow}>
+                        
+                        {/* Sección Visual (Botellas) */}
+                        <View style={styles.matchVisuals}>
+                            {/* Tarjeta Fondo (Rosado/Dislike) */}
+                            <View style={[styles.bottleCard, styles.bottleCardBack]}>
+                                <Ionicons name="wine" size={30} color="#EEA2AD" />
+                                <View style={[styles.reactionBadge, { backgroundColor: '#FFCDD2' }]}>
+                                    <Ionicons name="thumbs-down" size={12} color="#D32F2F" />
+                                </View>
+                            </View>
+
+                            {/* Tarjeta Frente (Tinto/Like) */}
+                            <View style={[styles.bottleCard, styles.bottleCardFront]}>
+                                <View style={styles.floatingHearts}>
+                                    <Ionicons name="heart" size={10} color="#FF5252" />
+                                    <Ionicons name="heart" size={8} color="#FF5252" style={{ marginLeft: 2, marginTop: -5 }} />
+                                </View>
+                                <Ionicons name="wine" size={34} color="#722F37" />
+                                <View style={[styles.reactionBadge, { backgroundColor: '#C8E6C9' }]}>
+                                    <Ionicons name="thumbs-up" size={12} color="#388E3C" />
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Sección Texto */}
+                        <View style={styles.matchTextContainer}>
+                            <Text style={styles.matchTitle}>Encuentra tu{"\n"}pareja perfecta</Text>
+                            <Text style={styles.matchSubtitle}>
+                                Recibe recomendaciones personalizadas según tus gustos.
+                            </Text>
+                            <TouchableOpacity style={styles.matchButton} onPress={openForm}>
+                                <Text style={styles.matchButtonText}>Iniciar sesión</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
             </View>
             <View style={{ height: 60 }} />
@@ -225,7 +261,109 @@ const styles = StyleSheet.create({
     footerCard: { marginHorizontal: 25, padding: 25, backgroundColor: '#F9F9F9', borderRadius: 24, alignItems: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: '#DDD' },
     footerTitle: { color: '#1A1A1A', fontSize: 16, fontWeight: 'bold', marginBottom: 15 },
     webButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A1A', paddingHorizontal: 25, paddingVertical: 12, borderRadius: 12 },
-    webButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 }
+    webButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+
+
+    matchCard: {
+        marginHorizontal: 20,
+        marginBottom: 40,
+        backgroundColor: '#FFF',
+        borderRadius: 20,
+        padding: 20,
+        // Sombra suave estilo "Elevation"
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+        borderWidth: 1,
+        borderColor: '#F0F0F0'
+    },
+    matchContentRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    matchVisuals: {
+        width: 100,
+        height: 100,
+        marginRight: 15,
+        position: 'relative',
+    },
+    bottleCard: {
+        width: 60,
+        height: 80,
+        backgroundColor: '#F9F9F9',
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#EEE',
+        position: 'absolute',
+    },
+    bottleCardBack: {
+        left: 0,
+        top: 10,
+        transform: [{ scale: 0.9 }],
+        opacity: 0.8,
+        zIndex: 1,
+    },
+    bottleCardFront: {
+        right: 10,
+        top: 0,
+        backgroundColor: '#FFF',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        zIndex: 2,
+    },
+    reactionBadge: {
+        position: 'absolute',
+        bottom: -8,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#FFF',
+    },
+    floatingHearts: {
+        position: 'absolute',
+        top: -15,
+        right: 0,
+        flexDirection: 'row',
+    },
+    matchTextContainer: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    matchTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#1A1A1A',
+        marginBottom: 6,
+        lineHeight: 22,
+    },
+    matchSubtitle: {
+        fontSize: 13,
+        color: '#666',
+        marginBottom: 15,
+        lineHeight: 18,
+    },
+    matchButton: {
+        backgroundColor: '#1A1A1A',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 30,
+        alignSelf: 'flex-start',
+    },
+    matchButtonText: {
+        color: '#FFF',
+        fontSize: 13,
+        fontWeight: 'bold',
+    }
 });
 
 export default MainHomeScreen;

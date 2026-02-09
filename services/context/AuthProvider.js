@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AuthContext from './AuthContext';
@@ -17,9 +17,11 @@ const AuthContextProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Estados para el Modal de Autenticación
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
 
+  // 1. CARGAR SESIÓN AL INICIAR APP
   useEffect(() => {
     const loadSession = async () => {
       try {
@@ -52,10 +54,15 @@ const AuthContextProvider = ({ children }) => {
   const onLogout = async () => {
     setUser(null);
     setToken(null);
-    await AsyncStorage.removeItem(USER_KEY);
-    await AsyncStorage.removeItem(TOKEN_KEY);
+    try {
+      await AsyncStorage.removeItem(USER_KEY);
+      await AsyncStorage.removeItem(TOKEN_KEY);
+    } catch (e) {
+      console.error("Error al limpiar storage en logout", e);
+    }
   };
 
+  // 2. GUARDAR SESIÓN AUTOMÁTICAMENTE CUANDO CAMBIA USER O TOKEN
   useEffect(() => {
     const saveSession = async () => {
       try {
@@ -63,6 +70,7 @@ const AuthContextProvider = ({ children }) => {
           await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
           await AsyncStorage.setItem(TOKEN_KEY, token);
         } else if (!loading) {
+          // Si no hay user/token y ya terminó de cargar, limpiar storage
           await AsyncStorage.removeItem(USER_KEY);
           await AsyncStorage.removeItem(TOKEN_KEY);
         }
@@ -73,25 +81,52 @@ const AuthContextProvider = ({ children }) => {
     saveSession();
   }, [user, token, loading]);
 
-  const loginRequest = async ({ email, password }) => {
-    const loginResponse = await loginApi({ email, password });
-    const tokenValue = loginResponse.token;
+  const updateSession = (newToken) => {
+    if (!newToken) return;
 
-    if (!tokenValue) {
-      throw new Error('No se recibió token desde el backend');
+    console.log("Actualizando sesión en caliente (updateSession)...");
+    
+    setToken(newToken);
+
+    try {
+      const claims = decodeToken(newToken);
+      const updatedUser = mapClaimsToUser(claims);
+      
+      if (updatedUser) {
+        setUser(prevUser => ({
+            ...prevUser, 
+            ...updatedUser 
+        }));
+      }
+    } catch (e) {
+      console.error("Error actualizando claims de usuario en updateSession", e);
     }
+  };
 
-    const claims = decodeToken(tokenValue);
-    const mapped = mapClaimsToUser(claims) || {
-      id: claims?.sub ?? null,
-      email,
-      role: 'User',
-    };
+  // 3. API REQUESTS
+  const loginRequest = async ({ email, password }) => {
+    try {
+      const loginResponse = await loginApi({ email, password });
+      const tokenValue = loginResponse.token;
 
-    console.log('LOGIN MOBILE - userData mapeado:', mapped);
-    onLogin(mapped, tokenValue);
+      if (!tokenValue) {
+        throw new Error('No se recibió token desde el backend');
+      }
 
-    return { user: mapped, token: tokenValue };
+      const claims = decodeToken(tokenValue);
+      const mapped = mapClaimsToUser(claims) || {
+        id: claims?.sub ?? null,
+        email,
+        role: 'User',
+      };
+
+      console.log('LOGIN MOBILE - userData mapeado:', mapped);
+      onLogin(mapped, tokenValue);
+
+      return { user: mapped, token: tokenValue };
+    } catch (error) {
+      throw error;
+    }
   };
 
   const registerRequest = async ({ email, password, fullName }) => {
@@ -119,6 +154,10 @@ const AuthContextProvider = ({ children }) => {
         loading,
         onLogin,
         onLogout,
+        
+        // Función nueva expuesta:
+        updateSession, 
+        
         isAuthModalOpen,
         authModalMode,
         openAuthModal,

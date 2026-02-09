@@ -29,7 +29,6 @@ import HistoryContext from '../../../../services/context/HistoryContext';
 import LoginRequired from '../../screen/LoguinRequired';
 
 const WineDetailScreen = ({ route, navigation }) => {
-    console.log("RUTA ACTUAL:", route.name, "DATOS RECIBIDOS:", route.params?.wineData?.name);
     const { wineData: initialData } = route.params || {};
     const insets = useSafeAreaInsets();
 

@@ -43,6 +43,7 @@ const WishListProvider = ({ children }) => {
     (id) => favorites.includes(id.toString()),
     [favorites]
   );
+  
 
   const toggleFavorite = useCallback(
     async (id) => {

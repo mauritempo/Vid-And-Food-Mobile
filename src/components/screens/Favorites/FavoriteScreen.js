@@ -3,6 +3,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useEffect
 } from 'react';
 import {
   View,
@@ -16,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 import SubscribeScreen from '../Suscribe/SuscribeScreen';
 import CustomNavbar from '../../common/ui/nav-bar/CustomNavbar';
@@ -25,7 +27,7 @@ import { COLORS } from '../../../theme/theme';
 import { fetchFavourites, toggleFavorite } from '../../../../services/wineServices'; 
 import AuthContext from '../../../../services/context/AuthContext';
 import LoginRequired from '../../screen/LoguinRequired';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+
 const FavoritesScreen = ({ navigation }) => {
   const { token, isAuthenticated, user } = useContext(AuthContext);
 
@@ -34,11 +36,17 @@ const FavoritesScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // 1. Calculamos el rol y el permiso
   const role = user?.role;
   const isSommelier = role === 'Sommelier' || role === 'Admin';
 
+  // 2. Función de carga robusta
   const loadFavourites = useCallback(async () => {
-    if (!isAuthenticated || !token || !isSommelier) return;
+    // Si no está logueado o no es sommelier, limpiamos y salimos
+    if (!isAuthenticated || !token || !isSommelier) {
+        setFavourites([]);
+        return;
+    }
 
     setLoading(true);
     setError(null);
@@ -54,27 +62,46 @@ const FavoritesScreen = ({ navigation }) => {
         : [];
       setFavourites(normalized);
     } catch (e) {
+      console.error("Error cargando favoritos:", e);
       setError('No se pudieron cargar tus favoritos.');
       setFavourites([]);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, token, isSommelier]);
+  }, [isAuthenticated, token, isSommelier]); // Dependencias críticas
 
+  // 3. EFECTO 1: Cuando la pantalla gana foco (navegación)
   useFocusEffect(
     useCallback(() => {
       loadFavourites();
     }, [loadFavourites])
   );
 
+  // 4. EFECTO 2: Reactividad inmediata al cambio de rol (Upgrade en caliente)
+  // Esto asegura que si el contexto cambia de "User" a "Sommelier" mientras estamos aquí, recargue.
+  useEffect(() => {
+    if (isSommelier) {
+        loadFavourites();
+    }
+  }, [isSommelier]); // Solo escuchamos cambios en el permiso
+
+  // --- Handlers ---
+
   const handleDeleteFavorite = async (wineId) => {
     try {
-      // Optimistic Update
-      setFavourites(favourites.filter(item => item.id !== wineId));
-      await toggleFavorite(wineId, token); 
+      // Optimistic Update: Quitamos de la lista visualmente primero
+      const previousFavorites = [...favourites];
+      setFavourites(prev => prev.filter(item => item.id !== wineId));
+      
+      try {
+          await toggleFavorite(wineId, token); 
+      } catch (apiError) {
+          // Si falla la API, revertimos
+          setFavourites(previousFavorites);
+          Alert.alert('Error', 'No se pudo eliminar de favoritos');
+      }
     } catch (e) {
-      Alert.alert('Error', 'No se pudo eliminar de favoritos');
-      loadFavourites(); 
+      console.error(e);
     }
   };
 
@@ -117,7 +144,7 @@ const FavoritesScreen = ({ navigation }) => {
     return result;
   }, [favourites, searchQuery]);
 
-  // --- RENDERIZADOS CONDICIONALES CORREGIDOS ---
+  // --- RENDERIZADO ---
 
   if (!isAuthenticated) {
     return (
@@ -134,19 +161,12 @@ const FavoritesScreen = ({ navigation }) => {
     );
   }
 
+  // Si NO es sommelier, mostramos la pantalla de suscripción
   if (!isSommelier) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
         <SubscribeScreen navigation={navigation} />
       </SafeAreaView>
-    );
-  }
-
-  if (loading && favourites.length === 0) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      </View>
     );
   }
 
@@ -164,26 +184,35 @@ const FavoritesScreen = ({ navigation }) => {
       </SafeAreaView>
 
       <View style={styles.content}>
-        {error && (
-          <Text style={{ color: 'red', textAlign: 'center', margin: 10 }}>
-            {error}
-          </Text>
-        )}
+        {/* Loading Indicator superpuesto si está cargando pero ya tenemos datos (refresh) o pantalla vacía */}
+        {loading && favourites.length === 0 ? (
+           <View style={styles.center}>
+             <ActivityIndicator size="large" color={COLORS.primary} />
+           </View>
+        ) : (
+           <>
+                {error && (
+                  <Text style={{ color: 'red', textAlign: 'center', margin: 10 }}>
+                    {error}
+                  </Text>
+                )}
 
-        <FlatList
-          data={filteredFavorites}
-          renderItem={renderWineItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={() => (
-            <View style={styles.center}>
-              <Text style={{ color: '#888', marginTop: 20, fontSize: 16 }}>
-                {!error ? 'No tienes vinos favoritos aún.' : ''}
-              </Text>
-            </View>
-          )}
-        />
+                <FlatList
+                  data={filteredFavorites}
+                  renderItem={renderWineItem}
+                  keyExtractor={(item) => item.id}
+                  contentContainerStyle={styles.listContent}
+                  showsVerticalScrollIndicator={false}
+                  ListEmptyComponent={() => (
+                    <View style={styles.center}>
+                      <Text style={{ color: '#888', marginTop: 20, fontSize: 16 }}>
+                        {!error ? 'No tienes vinos favoritos aún.' : ''}
+                      </Text>
+                    </View>
+                  )}
+                />
+           </>
+        )}
       </View>
     </View>
   );

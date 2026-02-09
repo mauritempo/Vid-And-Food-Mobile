@@ -4,12 +4,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const TOKEN_KEY = "vf-token";
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
+
 export const upgradeToSommelier = async (token) => {
+    // 1. Obtener el token actual para la cabecera
     const tokenToUse = token ?? await AsyncStorage.getItem(TOKEN_KEY);
-    console.log('Token que se usa en Authorization:', tokenToUse);
 
     if (!tokenToUse) {
-        throw new Error("Token de autenticación no proporcionado (pasar token o guardarlo en AsyncStorage).");
+        throw new Error("Token de autenticación no proporcionado.");
     }
 
     try {
@@ -22,23 +23,27 @@ export const upgradeToSommelier = async (token) => {
             },
         });
 
+        // 2. Parseamos la respuesta
         const text = await response.text();
-        AsyncStorage.setItem(tokenToUse)
-        console.log('upgradeToSommelier status:', response.status);
-        console.log('upgradeToSommelier raw body:', text);
-
         let data = null;
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                console.warn('No se pudo parsear JSON, body:', text);
-            }
+        
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (e) {
+            console.warn('No se pudo parsear JSON, body:', text);
         }
 
         if (!response.ok) {
             throw new Error(data?.message || `Error al actualizar la suscripción: ${response.status}`);
         }
+
+        // --- CORRECCIÓN AQUÍ ---
+        // 3. Si el backend devolvió un nuevo token, lo guardamos
+        if (data && data.token) {
+            console.log('Nuevo token recibido, actualizando Storage...');
+            await AsyncStorage.setItem(TOKEN_KEY, data.token);
+        }
+        // -----------------------
 
         return data ?? { success: true };
 
@@ -48,10 +53,8 @@ export const upgradeToSommelier = async (token) => {
     }
 };
 
-
 export const downgradeToUser = async (token) => {
     const tokenToUse = token ?? await AsyncStorage.getItem(TOKEN_KEY);
-    console.log('Token que se usa en Authorization (Downgrade):', tokenToUse);
 
     if (!tokenToUse) {
         throw new Error("Token de autenticación no proporcionado.");
@@ -68,21 +71,25 @@ export const downgradeToUser = async (token) => {
         });
 
         const text = await response.text();
-        console.log('downgradeToUser status:', response.status);
-        console.log('downgradeToUser raw body:', text);
-
         let data = null;
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                console.warn('No se pudo parsear JSON en downgrade, body:', text);
-            }
+
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (e) {
+            console.warn('No se pudo parsear JSON en downgrade, body:', text);
         }
 
         if (!response.ok) {
             throw new Error(data?.message || `Error al dar de baja la suscripción: ${response.status}`);
         }
+
+        // --- CORRECCIÓN AQUÍ ---
+        // Si al hacer downgrade también cambia el token (ej. cambian los roles en el token JWT)
+        if (data && data.token) {
+            console.log('Nuevo token recibido tras downgrade, actualizando Storage...');
+            await AsyncStorage.setItem(TOKEN_KEY, data.token);
+        }
+        // -----------------------
 
         return data ?? { success: true };
 
@@ -91,7 +98,6 @@ export const downgradeToUser = async (token) => {
         throw error;
     }
 };
-
 export const registerUser = async ({ fullName, email, password }) => {
   try {
     const response = await fetch(`${API_URL}/User/register`, {

@@ -5,8 +5,6 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 async function handleResponse(response) {
   const raw = await response.text(); // SIEMPRE leemos texto primero
 
-  console.log("HTTP", response.status, response.url);
-  console.log("RAW BODY:", raw);
 
   let data = {};
   if (raw) {
