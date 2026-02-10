@@ -34,7 +34,7 @@ const MainHomeScreen = ({ navigation }) => {
         navigation.navigate('Profile');
     };
     const openWeb = () => {
-        Linking.openURL('https://gemini.google.com');
+        Linking.openURL('https://vid-and-food-nz7y.vercel.app/sommelier-ai');
     }
 
     const renderFeaturedCard = ({ item }) => (
@@ -48,10 +48,7 @@ const MainHomeScreen = ({ navigation }) => {
                     source={{ uri: item?.imageUrl || 'https://via.placeholder.com/300x450' }} 
                     style={styles.verticalImage} 
                 />
-                <View style={styles.badge}>
-                    <Ionicons name="ribbon" size={12} color="#FFF" />
-                    <Text style={styles.badgeText}>ELITE</Text>
-                </View>
+               
             </View>
             
             <View style={styles.cardFooter}>

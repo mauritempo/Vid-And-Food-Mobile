@@ -360,7 +360,8 @@ const handleCloseModal = () => {
                     <Text style={styles.priceLabel}>Precio</Text>
                     <Text style={styles.priceValue}>$ {price.toLocaleString()}</Text>
                 </View>
-                <View style={styles.footerActions}>
+                
+                <View style={styles.footerActions} >
                     <TouchableOpacity style={[styles.actionIconBtn, styles.favBtnMargin]} onPress={handleToggleFavorite} activeOpacity={0.7}>
                         <Ionicons name={isFav ? "heart" : "heart-outline"} size={24} color={isFav ? "#E91E63" : "#666"} />
                         <Text style={[styles.actionBtnText, isFav && { color: "#E91E63" }]}>Favorito</Text>
@@ -501,7 +502,7 @@ const styles = StyleSheet.create({
     // 6. ESTILOS PARA ESTADO VACÍO
     emptyReviewsContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 20 },
     emptyReviewsText: { fontSize: 16, color: '#888', fontWeight: '600', marginTop: 8 },
-    emptyReviewsSubText: { fontSize: 14, color: '#AAA', marginTop: 4 }.color,
+    emptyReviewsSubText: { fontSize: 14, color: '#AAA', marginTop: 4 },
 
   loginModalWrapper: {
     flex: 1,

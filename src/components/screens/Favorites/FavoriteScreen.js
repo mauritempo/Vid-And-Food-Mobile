@@ -62,7 +62,7 @@ const FavoritesScreen = ({ navigation }) => {
         : [];
       setFavourites(normalized);
     } catch (e) {
-      console.error("Error cargando favoritos:", e);
+      
       setError('No se pudieron cargar tus favoritos.');
       setFavourites([]);
     } finally {

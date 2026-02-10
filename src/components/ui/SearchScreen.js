@@ -10,7 +10,7 @@ import {
     Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';  
-import WineCard from '../wines/WineCard'; 
+import WineCard from './WineCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS } from '../../theme/theme';
 

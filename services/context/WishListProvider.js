@@ -6,6 +6,7 @@ import {
   addFavorite,
   removeFavorite,
 } from '../wineServices';
+import { decodeToken } from '../AuthService';
 
 const WishListProvider = ({ children }) => {
   const { token } = useContext(AuthContext);
@@ -15,6 +16,11 @@ const WishListProvider = ({ children }) => {
   const loadFavorites = useCallback(async () => {
     if (!token) {
       setFavorites([]);
+      return;
+    }
+    
+    const decoded = decodeToken(token);
+    if(!decoded.role !== "Sommelier"){
       return;
     }
 
